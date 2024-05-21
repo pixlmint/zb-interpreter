@@ -62,8 +62,17 @@ typedef struct UserVarArray {
     int capacity;
 } UserVarArray;
 
-UserVar* get_variable(int variable_key);
+typedef struct Program {
+    UserVarArray* variables;
+    ASTNode* start_node;
+} Program;
+
+UserVar* get_variable(int variable_key, Program* program);
 void free_variables(UserVarArray* vars);
+void free_program(Program* program);
+
+Program* create_program_from_config(char* str_program);
+Program* init_program();
 
 typedef struct LinkedASTNodeList {
     ASTNode* head;
@@ -75,6 +84,4 @@ void add_node(LinkedASTNodeList* array, ASTNode* new_node);
 ASTNode* create_node(NodeType type);
 
 ASTNode* parse_expression(Token** tokens);
-
-void initialize_user_variables();
 

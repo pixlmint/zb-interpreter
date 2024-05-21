@@ -13,9 +13,8 @@ TokenArray* create_token_array(int initial_capacity);
 void add_token(TokenArray* array, Token token);
 
 TokenArray* tokenize(char* input);
-ASTNode* parse_tokens(TokenArray* tokens);
+ASTNode* parse_tokens(TokenArray* tokens, Program* program);
 int parse_statement(Token* current_token, Token* following_tokens, ASTNode** node);
-UserVar* get_variable(int variable_key);
 int str_to_int(char* value);
 int verify_next_tokens_equals(Token* tokens, TokenType* next_tokens, int current_position);
 TokenArray* get_array_part(TokenArray* tokens, int start, int max_values);

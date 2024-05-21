@@ -3,8 +3,10 @@
 
 void test_parse_basic_tokens() {
     char* str_program = "x1 = x1 + 0;";
+    Program* actual_program = init_program();
     TokenArray* tokens = tokenize(str_program);
-    ASTNode* program = parse_tokens(tokens);
+    ASTNode* program = parse_tokens(tokens, actual_program);
+    actual_program->start_node = program;
 
     CU_ASSERT_EQUAL(program->type, NODE_TYPE_ASSIGN);
     CU_ASSERT_EQUAL(program->data.assign.variable->key, 1);
@@ -14,24 +16,23 @@ void test_parse_basic_tokens() {
     CU_ASSERT_EQUAL(assign_node->data.binop.operation, ADDITION);
     CU_ASSERT_EQUAL(assign_node->data.binop.right->data.constant.value, 0);
 
-    free_token_array(tokens);
-    free_ast_node(program);
+    free_program(actual_program);
 }
 
 void test_parse_multi_tokens() {
     char* str_program = "x1 = x1 + 0;x2 = x2 + 0;";
-    TokenArray* tokens = tokenize(str_program);
-    ASTNode* program = parse_tokens(tokens);
+    Program* program = create_program_from_config(str_program);
+    ASTNode* root = program->start_node;
 
-    CU_ASSERT_EQUAL(program->type, NODE_TYPE_ASSIGN);
-    CU_ASSERT_EQUAL(program->data.assign.variable->key, 1);
-    ASTNode* assign_node = program->data.assign.value;
+    CU_ASSERT_EQUAL(root->type, NODE_TYPE_ASSIGN);
+    CU_ASSERT_EQUAL(root->data.assign.variable->key, 1);
+    ASTNode* assign_node = root->data.assign.value;
     CU_ASSERT_EQUAL(assign_node->type, NODE_TYPE_BINARY_OP);
     CU_ASSERT_EQUAL(assign_node->data.binop.left->data.variable_access.variable->key, 1);
     CU_ASSERT_EQUAL(assign_node->data.binop.operation, ADDITION);
     CU_ASSERT_EQUAL(assign_node->data.binop.right->data.constant.value, 0);
-    CU_ASSERT_NOT_EQUAL(program->next, NULL);
-    ASTNode* next_program = program->next;
+    CU_ASSERT_NOT_EQUAL(root->next, NULL);
+    ASTNode* next_program = root->next;
     if (next_program->type == NODE_TYPE_ASSIGN) {
         CU_ASSERT_EQUAL(next_program->data.assign.variable->key, 2);
         ASTNode* next_assign_node = next_program->data.assign.value;
@@ -44,18 +45,17 @@ void test_parse_multi_tokens() {
         printf("\nwrong node type: %d\n", next_program->type);
     }
 
-    free_token_array(tokens);
-    free_ast_node(program);
+    free_program(program);
 }
 
 void test_parse_tokens_loop() {
     char *str_program = "Loop x1 Do\nx2 = x2 + 1;\nEnd";
-    TokenArray* tokens = tokenize(str_program);
-    ASTNode* program = parse_tokens(tokens);
+    Program* program = create_program_from_config(str_program);
+    ASTNode* root = program->start_node;
 
-    CU_ASSERT_EQUAL(program->type, NODE_TYPE_LOOP);
-    CU_ASSERT_EQUAL(program->data.for_loop.count_var->data.variable_access.variable->key, 1);
-    ASTNode* body = program->data.for_loop.body;
+    CU_ASSERT_EQUAL(root->type, NODE_TYPE_LOOP);
+    CU_ASSERT_EQUAL(root->data.for_loop.count_var->data.variable_access.variable->key, 1);
+    ASTNode* body = root->data.for_loop.body;
     if (body->type == NODE_TYPE_ASSIGN) {
         CU_ASSERT_EQUAL(body->data.assign.variable->key, 2);
         ASTNode* assign = body->data.assign.value;
@@ -69,22 +69,21 @@ void test_parse_tokens_loop() {
         }
 
     } else {
-        CU_ASSERT_EQUAL(program->data.for_loop.body->type, NODE_TYPE_ASSIGN);
+        CU_ASSERT_EQUAL(root->data.for_loop.body->type, NODE_TYPE_ASSIGN);
         fprintf(stderr, "\nwrong body node type: %d\n", body->type);
     }
 
-    free_token_array(tokens);
-    free_ast_node(program);
+    free_program(program);
 }
 
 void test_parse_tokens_while_loop() {
     char *str_program = "While x1 > 0 Do\nx2 = x2 - 1;\nEnd";
-    TokenArray* tokens = tokenize(str_program);
-    ASTNode* program = parse_tokens(tokens);
+    Program* program = create_program_from_config(str_program);
+    ASTNode* root = program->start_node;
 
-    CU_ASSERT_EQUAL(program->type, NODE_TYPE_WHILE);
-    CU_ASSERT_EQUAL(program->data.while_loop.condition->data.variable_access.variable->key, 1);
-    ASTNode* body = program->data.while_loop.body;
+    CU_ASSERT_EQUAL(root->type, NODE_TYPE_WHILE);
+    CU_ASSERT_EQUAL(root->data.while_loop.condition->data.variable_access.variable->key, 1);
+    ASTNode* body = root->data.while_loop.body;
     if (body->type == NODE_TYPE_ASSIGN) {
         CU_ASSERT_EQUAL(body->data.assign.variable->key, 2);
         ASTNode* assign = body->data.assign.value;
@@ -98,12 +97,11 @@ void test_parse_tokens_while_loop() {
         }
 
     } else {
-        CU_ASSERT_EQUAL(program->data.while_loop.body->type, NODE_TYPE_ASSIGN);
+        CU_ASSERT_EQUAL(root->data.while_loop.body->type, NODE_TYPE_ASSIGN);
         fprintf(stderr, "\nwrong body node type: %d\n", body->type);
     }
 
-    free_token_array(tokens);
-    free_ast_node(program);
+    free_program(program);
 }
 
 void suite_parse_tokens(CU_pSuite suite) {

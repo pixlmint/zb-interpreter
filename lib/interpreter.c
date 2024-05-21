@@ -5,7 +5,7 @@
 int execute_ast(ASTNode* node) {
     switch (node->type) {
         case NODE_TYPE_ASSIGN:
-            // variables[node->data.assign.variable] = execute_ast(node->data.assign.value);
+            node->data.assign.variable->value = execute_ast(node->data.assign.value);
             break;
         case NODE_TYPE_WHILE:
             while (execute_ast(node->data.while_loop.condition) != 0) {

@@ -10,25 +10,39 @@ TokenType OPERATION_TOKENS[] = {TOKEN_VAR, TOKEN_ANY, TOKEN_INT, TOKEN_SEMICOLON
 TokenType WHILE_TOKENS[] = {TOKEN_VAR, TOKEN_GT, TOKEN_INT, TOKEN_DO};
 TokenType LOOP_TOKENS[] = {TOKEN_VAR, TOKEN_DO};
 
-UserVarArray* USER_VARS;
-int user_vars_initialized = 0;
+Program* init_program() {
+    Program* program = malloc(sizeof(Program));
 
-void initialize_user_variables() {
-    if (user_vars_initialized == 0) {
-        USER_VARS = malloc(sizeof(UserVarArray));
-        user_vars_initialized = 1;
-        USER_VARS->size = 0;
-        USER_VARS->capacity = 10;
-        USER_VARS->variables = malloc(sizeof(UserVar) * 10);
-    }
+    UserVarArray* user_vars = malloc(sizeof(UserVarArray));
+    user_vars->size = 0;
+    user_vars->capacity = 10;
+    user_vars->variables = malloc(sizeof(UserVar) * 10);
+    program->variables = user_vars;
+    get_variable(0, program);
+
+    return program;
+}
+
+Program* create_program_from_config(char* str_program) {
+    Program* program = init_program();
+    TokenArray* tokens = tokenize(str_program);
+
+    program->start_node = parse_tokens(tokens, program);
+
+    free_token_array(tokens);
+
+    return program;
+}
+
+void free_program(Program* program) {
+    free_variables(program->variables);
+    free_ast_node(program->start_node);
+    free(program);
 }
 
 void free_variables(UserVarArray* user_vars) {
     if (user_vars == NULL) {
         return;
-    }
-    for (int i = 0; i < user_vars->size; i++) {
-        free(&user_vars->variables[i]);
     }
     free(user_vars->variables);
     free(user_vars);
@@ -245,7 +259,7 @@ ASTNode* create_node(NodeType type) {
     return new_node;
 }
 
-ASTNode* parse_tokens(TokenArray* tokens) {
+ASTNode* parse_tokens(TokenArray* tokens, Program* program) {
     LinkedASTNodeList* nodes = create_node_array();
     for (int i = 0; i < tokens->size; i++) {
         ASTNode* node = NULL;
@@ -254,9 +268,9 @@ ASTNode* parse_tokens(TokenArray* tokens) {
             case TOKEN_VAR:
                 if (verify_next_tokens_equals(tokens->tokens, ASSIGNMENT_TOKENS, i + 1)) {
                     node = create_node(NODE_TYPE_ASSIGN);
-                    node->data.assign.variable = get_variable(str_to_int(current_token.value));
+                    node->data.assign.variable = get_variable(str_to_int(current_token.value), program);
                     TokenArray* child_tokens = get_array_part(tokens, i + 2, 4);
-                    node->data.assign.value = parse_tokens(child_tokens);
+                    node->data.assign.value = parse_tokens(child_tokens, program);
                     free(child_tokens->tokens);
                     free(child_tokens);
                     i = i + 4;
@@ -264,7 +278,7 @@ ASTNode* parse_tokens(TokenArray* tokens) {
                     node = create_node(NODE_TYPE_BINARY_OP);
                     ASTNode* variable_node = create_node(NODE_TYPE_VARIABLE_ACCESS);
                     ASTNode* constant_node = create_node(NODE_TYPE_CONSTANT);
-                    variable_node->data.variable_access.variable = get_variable(str_to_int(current_token.value));
+                    variable_node->data.variable_access.variable = get_variable(str_to_int(current_token.value), program);
                     node->data.binop.left = variable_node;
                     constant_node->data.constant.value = str_to_int(tokens->tokens[i + 2].value);
                     node->data.binop.right = constant_node;
@@ -287,14 +301,14 @@ ASTNode* parse_tokens(TokenArray* tokens) {
                 if (verify_next_tokens_equals(tokens->tokens, LOOP_TOKENS, i + 1)) {
                     node = create_node(NODE_TYPE_LOOP);
                     ASTNode* count_var = create_node(NODE_TYPE_VARIABLE_ACCESS);
-                    count_var->data.variable_access.variable = get_variable(str_to_int(tokens->tokens[i + 1].value));
+                    count_var->data.variable_access.variable = get_variable(str_to_int(tokens->tokens[i + 1].value), program);
                     node->data.for_loop.count_var = count_var;
                     int loop_closing_tag_index = find_associated_end_tag(tokens, i + 2);
                     if (loop_closing_tag_index == -1) {
                         fprintf(stderr, "Unable to find matching closing tag\n");
                     } else {
                         TokenArray* body_tokens = get_array_part(tokens, i + 3, abs(i + 3 - loop_closing_tag_index));
-                        node->data.for_loop.body = parse_tokens(body_tokens);
+                        node->data.for_loop.body = parse_tokens(body_tokens, program);
                         free(body_tokens->tokens);
                         free(body_tokens);
                         i = loop_closing_tag_index;
@@ -307,14 +321,14 @@ ASTNode* parse_tokens(TokenArray* tokens) {
                 if (verify_next_tokens_equals(tokens->tokens, WHILE_TOKENS, i + 1)) {
                     node = create_node(NODE_TYPE_WHILE);
                     ASTNode* condition_var = create_node(NODE_TYPE_VARIABLE_ACCESS);
-                    condition_var->data.variable_access.variable = get_variable(str_to_int(tokens->tokens[i + 1].value));
+                    condition_var->data.variable_access.variable = get_variable(str_to_int(tokens->tokens[i + 1].value), program);
                     node->data.while_loop.condition = condition_var;
                     int loop_closing_tag_index = find_associated_end_tag(tokens, i + 2);
                     if (loop_closing_tag_index == -1) {
                         fprintf(stderr, "Unable to find matching closing tag");
                     } else {
                         TokenArray* body_tokens = get_array_part(tokens, i + 5,  loop_closing_tag_index - (i + 5));
-                        node->data.while_loop.body = parse_tokens(body_tokens);
+                        node->data.while_loop.body = parse_tokens(body_tokens, program);
                         free(body_tokens->tokens);
                         free(body_tokens);
                         i = loop_closing_tag_index;
@@ -392,9 +406,9 @@ int verify_next_tokens_equals(Token* tokens, TokenType* next_tokens, int current
     return 1;
 }
 
-int get_variable_index(int variable_key) {
-    for (int i = 0; i < USER_VARS->size; i++) {
-        if (USER_VARS->variables[i].key == variable_key) {
+int get_variable_index(int variable_key, UserVarArray* vars) {
+    for (int i = 0; i < vars->size; i++) {
+        if (vars->variables[i].key == variable_key) {
             return i;
         }
     }
@@ -402,18 +416,19 @@ int get_variable_index(int variable_key) {
     return -1;
 }
 
-UserVar* get_variable(int variable_key) {
-    initialize_user_variables();
-    int variable_index = get_variable_index(variable_key);
+UserVar* get_variable(int variable_key, Program* program) {
+    UserVarArray* vars = program->variables;
+    int variable_index = get_variable_index(variable_key, vars);
     if (variable_index == -1) {
-        if (USER_VARS->size == USER_VARS->capacity) {
-            USER_VARS->capacity *= 2;
-            USER_VARS->variables = realloc(USER_VARS->variables, USER_VARS->capacity * sizeof(UserVar));
+        if (vars->size == vars->capacity) {
+            vars->capacity *= 2;
+            program->variables = realloc(program->variables->variables, program->variables->capacity * sizeof(UserVar));
+            vars = program->variables;
         }
-        USER_VARS->variables[USER_VARS->size++] = (UserVar) {variable_key, 0};
-        variable_index = USER_VARS->size - 1;
+        vars->variables[vars->size++] = (UserVar) {variable_key, 0};
+        variable_index = vars->size - 1;
     }
-    return &USER_VARS->variables[variable_index];
+    return &vars->variables[variable_index];
 }
 
 int str_to_int(char* value) {
