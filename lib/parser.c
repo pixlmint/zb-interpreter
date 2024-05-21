@@ -242,10 +242,12 @@ ASTNode* create_node(NodeType type) {
         case NODE_TYPE_LOOP:
             new_node->data.for_loop.body = NULL;
             new_node->data.for_loop.count_var = NULL;
+            new_node->data.for_loop.iterations = 0;
             break;
         case NODE_TYPE_WHILE:
             new_node->data.while_loop.condition = NULL;
             new_node->data.while_loop.body = NULL;
+            new_node->data.while_loop.iterations = 0;
             break;
         case NODE_TYPE_CONSTANT:
             new_node->data.constant.value = -1;

@@ -10,11 +10,13 @@ int execute_ast(ASTNode* node) {
         case NODE_TYPE_WHILE:
             while (execute_ast(node->data.while_loop.condition) != 0) {
                 execute_ast(node->data.while_loop.body);
+                node->data.while_loop.iterations++;
             }
             break;
         case NODE_TYPE_LOOP:
             for (int i = 0; i < execute_ast(node->data.for_loop.count_var); i++) {
                 execute_ast(node->data.for_loop.body);
+                node->data.for_loop.iterations++;
             }
             break;
         case NODE_TYPE_CONSTANT:

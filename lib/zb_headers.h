@@ -48,8 +48,8 @@ typedef struct ASTNode {
     union {
         struct { struct ASTNode* left; struct ASTNode* right; BinaryOperation operation; } binop;  // For binary operations
         struct { UserVar* variable; struct ASTNode* value; } assign;      // For assignments
-        struct { struct ASTNode* condition; struct ASTNode* body; } while_loop;  // For loops
-        struct { struct ASTNode* count_var; struct ASTNode* body; } for_loop;  // For loops
+        struct { struct ASTNode* condition; struct ASTNode* body; int iterations;} while_loop;  // For loops
+        struct { struct ASTNode* count_var; struct ASTNode* body; int iterations;} for_loop;  // For loops
         struct { UserVar* variable; } variable_access;
         struct { int value; } constant;
     } data;
@@ -82,6 +82,7 @@ typedef struct LinkedASTNodeList {
 LinkedASTNodeList* create_node_array();
 void add_node(LinkedASTNodeList* array, ASTNode* new_node);
 ASTNode* create_node(NodeType type);
+int execute_ast(ASTNode* node);
 
 ASTNode* parse_expression(Token** tokens);
 

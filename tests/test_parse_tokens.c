@@ -6,6 +6,7 @@ void test_parse_basic_tokens() {
     Program* actual_program = init_program();
     TokenArray* tokens = tokenize(str_program);
     ASTNode* program = parse_tokens(tokens, actual_program);
+    free_token_array(tokens);
     actual_program->start_node = program;
 
     CU_ASSERT_EQUAL(program->type, NODE_TYPE_ASSIGN);
