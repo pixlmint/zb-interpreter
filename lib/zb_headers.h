@@ -83,6 +83,7 @@ LinkedASTNodeList* create_node_array();
 void add_node(LinkedASTNodeList* array, ASTNode* new_node);
 ASTNode* create_node(NodeType type);
 int execute_ast(ASTNode* node);
+int str_to_int(char* value);
 
 ASTNode* parse_expression(Token** tokens);
 

@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "lib/zb_headers.h"
+#include "lib/tokenizer.h"
 
 char* read_file(const char* filename) {
     FILE* file = fopen(filename, "r");
@@ -24,7 +24,7 @@ char* read_file(const char* filename) {
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
-        fprintf(stderr, "Usage: %s <file>\n", argv[0]);
+        fprintf(stderr, "Usage: %s <file> <var1> <var2> ...\n", argv[0]);
         return 1;
     }
 
@@ -33,9 +33,21 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    Program* program = create_program_from_config(code);
+    Program* program = init_program();
+    for (int i = 2; i < argc; i++) {
+        UserVar* user_var = get_variable(i, program);
+        user_var->value = str_to_int(argv[i]);
+    }
 
-    execute_ast(program->start_node);
+    TokenArray* tokens = tokenize(code);
+    ASTNode* start_node = parse_tokens(tokens, program);
+    program->start_node = start_node;
+    free_token_array(tokens);
+
+    execute_ast(start_node);
+
+    UserVar* x0 = get_variable(0, program);
+    printf("x0 = %d\n", x0->value);
 
     free_program(program);
     free(code);
