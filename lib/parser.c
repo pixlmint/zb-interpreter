@@ -18,14 +18,19 @@ Program* init_program() {
     user_vars->capacity = 10;
     user_vars->variables = malloc(sizeof(UserVar) * 10);
     program->variables = user_vars;
-    get_variable(0, program);
+    program->x0 = get_variable(0, program);
 
     return program;
 }
 
-Program* create_program_from_config(char* str_program) {
+Program* create_program_from_config(char* str_program, int* input, int input_size) {
     Program* program = init_program();
     TokenArray* tokens = tokenize(str_program);
+
+    for (int i = 0; i < input_size; i++) {
+        UserVar* var = get_variable(i + 1, program);
+        var->value = input[i];
+    }
 
     program->start_node = parse_tokens(tokens, program);
 

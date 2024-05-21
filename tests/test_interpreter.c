@@ -4,7 +4,7 @@
 #include "../lib/zb_headers.h"
 
 void test_execute_assign() {
-    Program* program = create_program_from_config("x0 = x1 + 2");
+    Program* program = create_program_from_config("x0 = x1 + 2", (int[]){}, 0);
 
     execute_ast(program->start_node);
 
@@ -16,7 +16,7 @@ void test_execute_assign() {
 
 void test_execute_loop() {
     char* str_program = "x1 = x1 + 3;\nLoop x1 Do\nx0 = x0 + 1;End";
-    Program* program = create_program_from_config(str_program);
+    Program* program = create_program_from_config(str_program, (int[]){}, 0);
 
     execute_ast(program->start_node);
 
@@ -36,7 +36,7 @@ void test_execute_loop() {
 
 void test_execute_while() {
     char* str_program = "x1 = x1 + 3;\nWhile x1 > 0 Do\nx0 = x0 + 1;x1 = x1 - 1;End";
-    Program* program = create_program_from_config(str_program);
+    Program* program = create_program_from_config(str_program, (int[]){}, 0);
 
     execute_ast(program->start_node);
 

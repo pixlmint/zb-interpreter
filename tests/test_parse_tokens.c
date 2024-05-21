@@ -22,7 +22,7 @@ void test_parse_basic_tokens() {
 
 void test_parse_multi_tokens() {
     char* str_program = "x1 = x1 + 0;x2 = x2 + 0;";
-    Program* program = create_program_from_config(str_program);
+    Program* program = create_program_from_config(str_program, (int[]){}, 0);
     ASTNode* root = program->start_node;
 
     CU_ASSERT_EQUAL(root->type, NODE_TYPE_ASSIGN);
@@ -51,7 +51,7 @@ void test_parse_multi_tokens() {
 
 void test_parse_tokens_loop() {
     char *str_program = "Loop x1 Do\nx2 = x2 + 1;\nEnd";
-    Program* program = create_program_from_config(str_program);
+    Program* program = create_program_from_config(str_program, (int[]){}, 0);
     ASTNode* root = program->start_node;
 
     CU_ASSERT_EQUAL(root->type, NODE_TYPE_LOOP);
@@ -79,7 +79,7 @@ void test_parse_tokens_loop() {
 
 void test_parse_tokens_while_loop() {
     char *str_program = "While x1 > 0 Do\nx2 = x2 - 1;\nEnd";
-    Program* program = create_program_from_config(str_program);
+    Program* program = create_program_from_config(str_program, (int[]){}, 0);
     ASTNode* root = program->start_node;
 
     CU_ASSERT_EQUAL(root->type, NODE_TYPE_WHILE);

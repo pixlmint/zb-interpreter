@@ -65,13 +65,14 @@ typedef struct UserVarArray {
 typedef struct Program {
     UserVarArray* variables;
     ASTNode* start_node;
+    UserVar* x0;
 } Program;
 
 UserVar* get_variable(int variable_key, Program* program);
 void free_variables(UserVarArray* vars);
 void free_program(Program* program);
 
-Program* create_program_from_config(char* str_program);
+Program* create_program_from_config(char* str_program, int* input, int input_size);
 Program* init_program();
 
 typedef struct LinkedASTNodeList {
@@ -86,4 +87,4 @@ int execute_ast(ASTNode* node);
 int str_to_int(char* value);
 
 ASTNode* parse_expression(Token** tokens);
-
+char* read_file(const char* filename);
