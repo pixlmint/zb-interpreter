@@ -3,50 +3,56 @@ CC := gcc
 CFLAGS := -Wall -I./lib -g
 COVFLAGS := -fprofile-arcs -ftest-coverage
 LDFLAGS := -L/usr/lib
-LDLIBS := -lcunit -lgcov
+TEST_LDLIBS := -lcunit -lgcov
 
 # Directory definitions
 BUILD_DIR := build
+PROD_DIR := $(BUILD_DIR)/prod
+TEST_DIR := $(BUILD_DIR)/test
 SRC_DIR := lib
-TEST_DIR := tests
-OBJ_DIR := $(BUILD_DIR)/obj
-BIN_DIR := $(BUILD_DIR)/bin
-COV_DIR := $(BUILD_DIR)/coverage
+TEST_SRC_DIR := tests
+TEST_OBJ_DIR := $(TEST_DIR)/obj
+TEST_BIN_DIR := $(TEST_DIR)/bin
+TEST_COV_DIR := $(TEST_DIR)/coverage
+
+PROD_OBJ_DIR := $(PROD_DIR)/obj
+PROD_BIN_DIR := $(PROD_DIR)/bin
 
 # File lists
 SRC_FILES := $(wildcard $(SRC_DIR)/*.c)
-TEST_FILES := $(wildcard $(TEST_DIR)/*.c)
+TEST_FILES := $(wildcard $(TEST_SRC_DIR)/*.c)
 
 # Object files
-OBJ_FILES := $(SRC_FILES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
-TEST_OBJ_FILES := $(TEST_FILES:$(TEST_DIR)/%.c=$(OBJ_DIR)/%.o)
-MAIN_OBJ := $(OBJ_DIR)/main.o
+PROD_OBJ_FILES := $(SRC_FILES:$(SRC_DIR)/%.c=$(PROD_OBJ_DIR)/%.o)
+TEST_OBJ_SRC_FILES := $(SRC_FILES:$(SRC_DIR)/%.c=$(TEST_OBJ_DIR)/%.o)
+TEST_OBJ_TEST_FILES := $(TEST_FILES:$(TEST_SRC_DIR)/%.c=$(TEST_OBJ_DIR)/%.o)
+MAIN_OBJ := $(PROD_OBJ_DIR)/main.o
 
 # Executables
-EXEC := $(BIN_DIR)/zb
-TEST_EXEC := $(BIN_DIR)/test_runner
+EXEC := $(PROD_BIN_DIR)/zb
+TEST_EXEC := $(TEST_BIN_DIR)/test_runner
 
 # Default target
 all: $(EXEC)
 
 # Ensure the output directories exist
-$(shell mkdir -p $(BIN_DIR) $(OBJ_DIR) $(COV_DIR))
+$(shell mkdir -p $(TEST_BIN_DIR) $(TEST_OBJ_DIR) $(TEST_COV_DIR) $(PROD_BIN_DIR) $(PROD_OBJ_DIR))
 
 # Executable rules
-$(EXEC): $(OBJ_FILES) $(MAIN_OBJ)
-	$(CC) $^ $(LDLIBS) -o $@ $(LDFLAGS)
+$(EXEC): $(PROD_OBJ_FILES) $(MAIN_OBJ)
+	$(CC) $^ -o $@ $(LDFLAGS)
 
-$(TEST_EXEC): $(filter-out $(MAIN_OBJ), $(OBJ_FILES)) $(TEST_OBJ_FILES)
-	$(CC) $^ $(LDLIBS) -o $@ $(LDFLAGS) $(COVFLAGS)
+$(TEST_EXEC): $(TEST_OBJ_SRC_FILES) $(TEST_OBJ_TEST_FILES)
+	$(CC) $^ $(TEST_LDLIBS) -o $@ $(LDFLAGS) $(COVFLAGS)
 
-# Object file rules
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
+$(PROD_OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+$(TEST_OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(TEST_OBJ_DIR)
+	$(CC) $(CFLAGS) $(COVFLAGS) -c $< -o $@
+$(TEST_OBJ_DIR)/%.o: $(TEST_SRC_DIR)/%.c | $(OBJ_DIR)
 	$(CC) $(CFLAGS) $(COVFLAGS) -c $< -o $@
 
-$(OBJ_DIR)/%.o: $(TEST_DIR)/%.c | $(OBJ_DIR)
-	$(CC) $(CFLAGS) $(COVFLAGS) -c $< -o $@
-
-$(MAIN_OBJ): main.c | $(OBJ_DIR)
+$(MAIN_OBJ): main.c | $(PROD_OBJ_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Testing and Debugging
@@ -64,11 +70,11 @@ debug: $(TEST_EXEC)
 # Coverage analysis
 coverage:
 	@echo "Generating coverage report..."
-	@lcov --directory $(OBJ_DIR) --capture --output-file $(COV_DIR)/coverage.info
-	@lcov --list $(COV_DIR)/coverage.info  # This command will list what is actually captured before filtering.
-	@lcov --ignore-errors unused --ignore-errors empty --remove $(COV_DIR)/coverage.info "tests/*" --output-file $(COV_DIR)/coverage_filtered.info
-	@genhtml $(COV_DIR)/coverage_filtered.info --output-directory $(COV_DIR)
-	@echo "Coverage report generated in $(COV_DIR)"
+	@lcov --directory $(TEST_OBJ_DIR) --capture --output-file $(TEST_COV_DIR)/coverage.info
+	@lcov --list $(TEST_COV_DIR)/coverage.info  # This command will list what is actually captured before filtering.
+	@lcov --ignore-errors unused --ignore-errors empty --remove $(TEST_COV_DIR)/coverage.info "tests/*" --output-file $(TEST_COV_DIR)/coverage_filtered.info
+	@genhtml $(TEST_COV_DIR)/coverage_filtered.info --output-directory $(TEST_COV_DIR)
+	@echo "Coverage report generated in $(TEST_COV_DIR)"
 
 # Cleaning up
 clean:
