@@ -3,12 +3,14 @@ CC = gcc
 CFLAGS = -Wall -I./lib -fprofile-arcs -ftest-coverage -g
 LDFLAGS = -L/usr/lib -lcunit -lgcov
 
+BUILD_DIR = build
+
 # Directory definitions
 SRC_DIR = lib
 TEST_DIR = tests
-OBJ_DIR = obj
-BIN_DIR = bin
-COV_DIR = coverage
+OBJ_DIR = $(BUILD_DIR)/obj
+BIN_DIR = $(BUILD_DIR)/bin
+COV_DIR = $(BUILD_DIR)/coverage
 
 # Automatically list source and test files
 SRC_FILES = $(wildcard $(SRC_DIR)/*.c)

@@ -5,6 +5,10 @@
 #include "tokenizer.h"
 
 TokenType OPENING_TAGS[] = {TOKEN_WHILE, TOKEN_LOOP};
+TokenType ASSIGNMENT_TOKENS[] = {TOKEN_ASSIGN, TOKEN_VAR, TOKEN_ANY, TOKEN_INT, TOKEN_SEMICOLON};
+TokenType OPERATION_TOKENS[] = {TOKEN_VAR, TOKEN_ANY, TOKEN_INT, TOKEN_SEMICOLON};
+TokenType WHILE_TOKENS[] = {TOKEN_VAR, TOKEN_GT, TOKEN_INT, TOKEN_DO};
+TokenType LOOP_TOKENS[] = {TOKEN_VAR, TOKEN_DO};
 
 TokenArray* tokenize(char* input) {
     TokenArray* tokens = create_token_array(1000);
@@ -117,39 +121,51 @@ void add_token(TokenArray* array, Token token) {
     array->tokens[array->size++] = token;
 }
 
+LinkedASTNodeList* create_node_array() {
+    LinkedASTNodeList* array = malloc(sizeof(LinkedASTNodeList));
+    array->head = NULL;
+    array->tail = NULL;
+    return array;
+}
+
+void add_node(LinkedASTNodeList* array, ASTNode* new_node) {
+    if (array->head == NULL) {
+        array->head = new_node;
+    }
+    if (array->tail == NULL) {
+        array->tail = new_node;
+    } else {
+        array->tail->next = new_node;
+        array->tail = new_node;
+    }
+}
+
 void free_ast_node(ASTNode* node) {
     if (node == NULL) {
         return;
     }
-
-    if (node->type == NODE_TYPE_ASSIGN) {
-        if (node->data.assign.value != NULL) {
-            free_ast_node(node->data.assign.value);
-        }
-    } else if (node->type == NODE_TYPE_BINARY_OP) {
-        if (node->data.binop.left != NULL) {
+    switch (node->type) {
+        case NODE_TYPE_BINARY_OP:
             free_ast_node(node->data.binop.left);
-        }
-        if (node->data.binop.right != NULL) {
             free_ast_node(node->data.binop.right);
-        }
-    } else if (node->type == NODE_TYPE_LOOP) {
-        if (node->data.for_loop.count_var != NULL) {
+            break;
+        case NODE_TYPE_ASSIGN:
+            free_ast_node(node->data.assign.value);
+            break;
+        case NODE_TYPE_LOOP:
             free_ast_node(node->data.for_loop.count_var);
-        }
-        if (node->data.for_loop.body != NULL) {
             free_ast_node(node->data.for_loop.body);
-        }
-    } else if (node->type == NODE_TYPE_WHILE) {
-        if (node->data.while_loop.condition != NULL) {
+            break;
+        case NODE_TYPE_WHILE:
             free_ast_node(node->data.while_loop.condition);
-        }
-        if (node->data.while_loop.body != NULL) {
             free_ast_node(node->data.while_loop.body);
-        }
+            break;
+        default:
+            break;
     }
 
-    if (node->next != NULL) {
+    // next node
+    if (node->next != NULL && node->next != node) {
         free_ast_node(node->next);
     }
 
@@ -176,40 +192,53 @@ ASTNode* create_node(NodeType type) {
     ASTNode* new_node = malloc(sizeof(ASTNode));
     new_node->type = type;
     new_node->next = NULL;
-    new_node->data.binop.left = NULL;
-    new_node->data.binop.right = NULL;
-    new_node->data.assign.value = NULL;
-    new_node->data.assign.variable = -1;
-    new_node->data.constant.value = -1;
-    new_node->data.for_loop.body = NULL;
-    new_node->data.for_loop.count_var = NULL;
-    new_node->data.while_loop.condition = NULL;
-    new_node->data.while_loop.body = NULL;
-    new_node->data.variable_access.index = -1;
+
+    switch (type) {
+        case NODE_TYPE_BINARY_OP:
+            new_node->data.binop.left = NULL;
+            new_node->data.binop.right = NULL;
+            break;
+        case NODE_TYPE_ASSIGN:
+            new_node->data.assign.value = NULL;
+            new_node->data.assign.variable = -1;
+            break;
+        case NODE_TYPE_LOOP:
+            new_node->data.for_loop.body = NULL;
+            new_node->data.for_loop.count_var = NULL;
+            break;
+        case NODE_TYPE_WHILE:
+            new_node->data.while_loop.condition = NULL;
+            new_node->data.while_loop.body = NULL;
+            break;
+        case NODE_TYPE_CONSTANT:
+            new_node->data.constant.value = -1;
+            break;
+        case NODE_TYPE_VARIABLE_ACCESS:
+            new_node->data.variable_access.index = -1;
+            break;
+        default:
+            break;
+    }
 
     return new_node;
 }
 
 ASTNode* parse_tokens(TokenArray* tokens) {
-    ASTNode* first_node = NULL;
-    ASTNode* previous_node = NULL;
-    TokenType assignment_tokens[] = {TOKEN_ASSIGN, TOKEN_VAR, TOKEN_ANY, TOKEN_INT, TOKEN_SEMICOLON};
-    TokenType operation_tokens[] = {TOKEN_VAR, TOKEN_ANY, TOKEN_INT, TOKEN_SEMICOLON};
-    TokenType while_tokens[] = {TOKEN_VAR, TOKEN_GT, TOKEN_INT, TOKEN_DO};
-    TokenType loop_tokens[] = {TOKEN_VAR, TOKEN_DO};
+    LinkedASTNodeList* nodes = create_node_array();
     for (int i = 0; i < tokens->size; i++) {
-        ASTNode* node;
+        ASTNode* node = NULL;
         Token current_token = tokens->tokens[i];
         switch (current_token.type) {
             case TOKEN_VAR:
-                if (verify_next_tokens_equals(tokens->tokens, assignment_tokens, i + 1)) {
+                if (verify_next_tokens_equals(tokens->tokens, ASSIGNMENT_TOKENS, i + 1)) {
                     node = create_node(NODE_TYPE_ASSIGN);
                     node->data.assign.variable = get_variable_index(current_token.value);
                     TokenArray* child_tokens = get_array_part(tokens, i + 2, 4);
                     node->data.assign.value = parse_tokens(child_tokens);
-                    // free_token_array(child_tokens);
+                    free(child_tokens->tokens);
+                    free(child_tokens);
                     i = i + 4;
-                } else if (verify_next_tokens_equals(tokens->tokens, operation_tokens, i)) {
+                } else if (verify_next_tokens_equals(tokens->tokens, OPERATION_TOKENS, i)) {
                     node = create_node(NODE_TYPE_BINARY_OP);
                     ASTNode* variable_node = create_node(NODE_TYPE_VARIABLE_ACCESS);
                     ASTNode* constant_node = create_node(NODE_TYPE_CONSTANT);
@@ -233,7 +262,7 @@ ASTNode* parse_tokens(TokenArray* tokens) {
                 }
                 break;
             case TOKEN_LOOP:
-                if (verify_next_tokens_equals(tokens->tokens, loop_tokens, i + 1)) {
+                if (verify_next_tokens_equals(tokens->tokens, LOOP_TOKENS, i + 1)) {
                     node = create_node(NODE_TYPE_LOOP);
                     ASTNode* count_var = create_node(NODE_TYPE_VARIABLE_ACCESS);
                     count_var->data.variable_access.index = get_variable_index(tokens->tokens[i + 1].value);
@@ -242,9 +271,10 @@ ASTNode* parse_tokens(TokenArray* tokens) {
                     if (loop_closing_tag_index == -1) {
                         fprintf(stderr, "Unable to find matching closing tag\n");
                     } else {
-                        TokenArray* body_tokens = get_array_part(tokens, i + 2, abs(i + 2 - loop_closing_tag_index));
+                        TokenArray* body_tokens = get_array_part(tokens, i + 3, abs(i + 3 - loop_closing_tag_index));
                         node->data.for_loop.body = parse_tokens(body_tokens);
-                        // free_token_array(body_tokens);
+                        free(body_tokens->tokens);
+                        free(body_tokens);
                         i = loop_closing_tag_index;
                     }
                 } else {
@@ -252,7 +282,7 @@ ASTNode* parse_tokens(TokenArray* tokens) {
                 }
                 break;
             case TOKEN_WHILE:
-                if (verify_next_tokens_equals(tokens->tokens, while_tokens, i + 1)) {
+                if (verify_next_tokens_equals(tokens->tokens, WHILE_TOKENS, i + 1)) {
                     node = create_node(NODE_TYPE_WHILE);
                     ASTNode* condition_var = create_node(NODE_TYPE_VARIABLE_ACCESS);
                     condition_var->data.variable_access.index = get_variable_index(tokens->tokens[i + 1].value);
@@ -261,28 +291,29 @@ ASTNode* parse_tokens(TokenArray* tokens) {
                     if (loop_closing_tag_index == -1) {
                         fprintf(stderr, "Unable to find matching closing tag");
                     } else {
-                        TokenArray* body_tokens = get_array_part(tokens, i + 2, abs(i + 2 - loop_closing_tag_index));
+                        TokenArray* body_tokens = get_array_part(tokens, i + 5,  loop_closing_tag_index - (i + 5));
                         node->data.while_loop.body = parse_tokens(body_tokens);
-                        // free_token_array(body_tokens);
+                        free(body_tokens->tokens);
+                        free(body_tokens);
                         i = loop_closing_tag_index;
                     }
                 } else {
                     fprintf(stderr, "Invalid While definition\n");
                 }
                 break;
+            case TOKEN_EOF:
+            case TOKEN_END:
+                break;
             default:
                 printf("nothing\n");
         }
-        if (first_node == NULL) {
-            first_node = node;
-        }
-        if (previous_node == NULL) {
-            previous_node = node;
-        } else {
-            previous_node->next = node;
+        if (node != NULL) {
+            add_node(nodes, node);
         }
     }
-    return first_node;
+    ASTNode* head = nodes->head;
+    free(nodes);
+    return head;
 }
 
 int find_associated_end_tag(TokenArray* tokens, int start_position) {
@@ -318,9 +349,12 @@ TokenArray* get_array_part(TokenArray* tokens, int start, int max_values) {
         add_token(sub_tokens, tokens->tokens[start]);
         return sub_tokens;
     }
-    int actual_max_values = max_values + start >= tokens_size ? max_values + start : tokens_size;
-    for (int i = 0; i < actual_max_values - start; i++) {
-        add_token(sub_tokens, tokens->tokens[i + start]);
+    for (int i = 0; i < max_values; i++) {
+        if (start + i > tokens_size) {
+            break;
+        } else {
+            add_token(sub_tokens, tokens->tokens[i + start]);
+        }
     }
 
     return sub_tokens;

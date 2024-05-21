@@ -42,6 +42,7 @@ typedef enum {
     NODE_TYPE_CONSTANT,
     NODE_TYPE_VARIABLE_ACCESS,
     NODE_TYPE_BINARY_OP,
+    NODE_TYPE_UNINIZIALISED,
 } NodeType;
 
 typedef enum {
@@ -61,6 +62,15 @@ typedef struct ASTNode {
     } data;
     struct ASTNode* next; // For linking nodes in a sequence
 } ASTNode;
+
+typedef struct LinkedASTNodeList {
+    ASTNode* head;
+    ASTNode* tail;
+} LinkedASTNodeList;
+
+LinkedASTNodeList* create_node_array();
+void add_node(LinkedASTNodeList* array, ASTNode* new_node);
+ASTNode* create_node(NodeType type);
 
 ASTNode* parse_expression(Token** tokens);
 int evaluate_expression(ASTNode* expr);

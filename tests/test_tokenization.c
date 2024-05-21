@@ -1,4 +1,5 @@
 #include <CUnit/Basic.h>
+#include <CUnit/CUnit.h>
 #include "../lib/tokenizer.h"
 
 void test_tokenize_assign() {
@@ -82,7 +83,7 @@ void test_tokenize_operators(void) {
 }
 
 void test_tokenize_multiline(void) {
-    TokenArray* resultArr = tokenize("x1 = x1 + 0;x2 = x2 + 0;");
+    TokenArray* resultArr = tokenize("x1 = x1 + 0;\nx2 = x2 + 0;");
     Token* result = resultArr->tokens;
 
     CU_ASSERT_EQUAL(result[0].type, TOKEN_VAR);
@@ -101,6 +102,28 @@ void test_tokenize_multiline(void) {
     free_token_array(resultArr);
 }
 
+void test_tokenize_loop_realistic() {
+    TokenArray* resultArr = tokenize("Loop x1 Do\nx2 = x2 + 1;\nEnd");
+    Token* result = resultArr->tokens;
+
+    CU_ASSERT_EQUAL(result[0].type, TOKEN_LOOP);
+    CU_ASSERT_EQUAL(result[1].type, TOKEN_VAR);
+    CU_ASSERT_STRING_EQUAL(result[1].value, "1");
+    CU_ASSERT_EQUAL(result[2].type, TOKEN_DO);
+    CU_ASSERT_EQUAL(result[3].type, TOKEN_VAR);
+    CU_ASSERT_STRING_EQUAL(result[3].value, "2");
+    CU_ASSERT_EQUAL(result[4].type, TOKEN_ASSIGN);
+    CU_ASSERT_EQUAL(result[5].type, TOKEN_VAR);
+    CU_ASSERT_STRING_EQUAL(result[5].value, "2");
+    CU_ASSERT_EQUAL(result[6].type, TOKEN_PLUS);
+    CU_ASSERT_EQUAL(result[7].type, TOKEN_INT);
+    CU_ASSERT_STRING_EQUAL(result[7].value, "1");
+    CU_ASSERT_EQUAL(result[8].type, TOKEN_SEMICOLON);
+    CU_ASSERT_EQUAL(result[9].type, TOKEN_END);
+
+    free_token_array(resultArr);
+}
+
 void suite_parser(CU_pSuite suite) {
     CU_add_test(suite, "test_tokenize_numbers", test_tokenize_numbers);
     CU_add_test(suite, "test_tokenize_variables", test_tokenize_variables);
@@ -111,5 +134,6 @@ void suite_parser(CU_pSuite suite) {
     CU_add_test(suite, "test_tokenize_keywords", test_tokenize_keywords);
     CU_add_test(suite, "test_tokenize_unknown", test_tokenize_unknown);
     CU_add_test(suite, "test_tokenize_multiline", test_tokenize_multiline);
+    CU_add_test(suite, "test_tokenize_loop_realistic", test_tokenize_loop_realistic);
 }
 

@@ -131,6 +131,31 @@ void test_find_associated_end_tag_nested() {
     free_token_array(tokens);
 }
 
+void test_create_node_array(void) {
+    LinkedASTNodeList* array = create_node_array();
+
+    CU_ASSERT_PTR_NOT_NULL(array);
+    CU_ASSERT_PTR_NULL(array->head);
+    CU_ASSERT_PTR_NULL(array->tail);
+
+    free(array);
+}
+
+void test_add_node(void) {
+    LinkedASTNodeList* array = create_node_array();
+    ASTNode* new_node = create_node(NODE_TYPE_UNINIZIALISED);
+
+    add_node(array, new_node);
+
+    CU_ASSERT_PTR_NOT_NULL(array->head);
+    CU_ASSERT_PTR_NOT_NULL(array->tail);
+    CU_ASSERT_PTR_EQUAL(array->head, new_node);
+    CU_ASSERT_PTR_EQUAL(array->tail, new_node);
+
+    free_ast_node(new_node);
+    free(array);
+}
+
 void suite_tree_builder(CU_pSuite suite) {
     CU_add_test(suite, "test_get_variable_index", test_get_variable_index);
     CU_add_test(suite, "test_get_array_part", test_get_array_part);
@@ -141,5 +166,8 @@ void suite_tree_builder(CU_pSuite suite) {
     CU_add_test(suite, "test_find_associated_end_tag_easy", test_find_associated_end_tag_easy);
     CU_add_test(suite, "test_find_associated_end_tag_realistic", test_find_associated_end_tag_realistic);
     CU_add_test(suite, "test_find_associated_end_tag_nested", test_find_associated_end_tag_nested);
+    CU_add_test(suite, "test_create_node_array", test_create_node_array);
+    CU_add_test(suite, "test_create_node_array", test_create_node_array);
+    CU_add_test(suite, "test_add_node", test_add_node);
 }
 
