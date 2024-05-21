@@ -14,7 +14,7 @@ void test_get_variable_index() {
     int actualVal[] = {1, 55, 1000, 1};
     int result;
     for (int i = 0; i < 4; i++) {
-        result = get_variable_index(testVal[i]);
+        result = str_to_int(testVal[i]);
         CU_ASSERT(result == actualVal[i]);
     }
 }

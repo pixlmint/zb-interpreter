@@ -22,18 +22,6 @@ typedef struct {
     char* value;
 } Token;
 
-#define MAX_VARS 100
-
-typedef struct Expression {
-    int type; // 0 for constant, 1 for variable
-    int value;
-} Expression;
-
-typedef struct Assignment {
-    int variableIndex;
-    Expression *expr;
-} Assignment;
-
 typedef enum {
     NODE_TYPE_ASSIGN,
     NODE_TYPE_WHILE,
@@ -50,18 +38,32 @@ typedef enum {
     SUBTRACTION,
 } BinaryOperation;
 
+typedef struct UserVar {
+    int key;
+    int value;
+} UserVar;
+
 typedef struct ASTNode {
     NodeType type;
     union {
         struct { struct ASTNode* left; struct ASTNode* right; BinaryOperation operation; } binop;  // For binary operations
-        struct { int variable; struct ASTNode* value; } assign;      // For assignments
+        struct { UserVar* variable; struct ASTNode* value; } assign;      // For assignments
         struct { struct ASTNode* condition; struct ASTNode* body; } while_loop;  // For loops
         struct { struct ASTNode* count_var; struct ASTNode* body; } for_loop;  // For loops
-        struct { int index; } variable_access;
+        struct { UserVar* variable; } variable_access;
         struct { int value; } constant;
     } data;
     struct ASTNode* next; // For linking nodes in a sequence
 } ASTNode;
+
+typedef struct UserVarArray {
+    UserVar* variables;
+    int size;
+    int capacity;
+} UserVarArray;
+
+UserVar* get_variable(int variable_key);
+void free_variables(UserVarArray* vars);
 
 typedef struct LinkedASTNodeList {
     ASTNode* head;
@@ -73,5 +75,6 @@ void add_node(LinkedASTNodeList* array, ASTNode* new_node);
 ASTNode* create_node(NodeType type);
 
 ASTNode* parse_expression(Token** tokens);
-int evaluate_expression(ASTNode* expr);
+
+void initialize_user_variables();
 
