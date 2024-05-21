@@ -1,0 +1,22 @@
+name: Windows Build with GNU Make
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up MinGW
+      run: choco install mingw -y
+
+    - name: Build with GNU Make
+      run: mingw32-make all
+
+    - name: Archive production artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: windows-binaries
+        path: build/bin/
+
