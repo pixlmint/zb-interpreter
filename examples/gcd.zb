@@ -1,0 +1,21 @@
+While x2 > 0 Do
+  x4 = x2 + 0;
+  x0 = x1 + 0;
+  Loop x1 Do
+      x1 = x1 - x2;
+      x3 = x1 + 0;
+      x3 = 1 - x3;
+      x3 = 1 - x3;
+      Loop x3 Do
+          x0 = x1 + 0;
+      End
+  End;
+  x1 = x2 - 1;
+  x1 = x0 - x1;
+  Loop x1 Do
+      x0 = 0 + 0;
+  End;
+  x2 = x0 + 0;
+  x1 = x4 + 0;
+End;
+x0 = x1 + 0;

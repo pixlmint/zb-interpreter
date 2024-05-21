@@ -1,0 +1,11 @@
+x4 = x2 + 0;
+x3 = x1 - x2;
+Loop x3 Do
+    x4 = x1 + 0;
+End;
+x5 = x2 + 0;
+x3 = x2 - x1;
+Loop x3 Do
+    x5 = x1 + 0;
+End;
+x0 = x4 - x5;
