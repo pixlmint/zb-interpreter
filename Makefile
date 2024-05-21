@@ -1,6 +1,7 @@
 # Compiler and linker configurations
 CC := gcc
 CFLAGS := -Wall -I./lib -g
+COVFLAGS := -fprofile-arcs -ftest-coverage
 LDFLAGS := -L/usr/lib
 LDLIBS := -lcunit -lgcov
 
@@ -36,14 +37,14 @@ $(EXEC): $(OBJ_FILES) $(MAIN_OBJ)
 	$(CC) $^ $(LDLIBS) -o $@ $(LDFLAGS)
 
 $(TEST_EXEC): $(filter-out $(MAIN_OBJ), $(OBJ_FILES)) $(TEST_OBJ_FILES)
-	$(CC) $^ $(LDLIBS) -o $@ $(LDFLAGS)
+	$(CC) $^ $(LDLIBS) -o $@ $(LDFLAGS) $(COVFLAGS)
 
 # Object file rules
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $(COVFLAGS) -c $< -o $@
 
 $(OBJ_DIR)/%.o: $(TEST_DIR)/%.c | $(OBJ_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $(COVFLAGS) -c $< -o $@
 
 $(MAIN_OBJ): main.c | $(OBJ_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -64,7 +65,8 @@ debug: $(TEST_EXEC)
 coverage:
 	@echo "Generating coverage report..."
 	@lcov --directory $(OBJ_DIR) --capture --output-file $(COV_DIR)/coverage.info
-	@lcov --remove $(COV_DIR)/coverage.info "/usr/*" "tests/*" --output-file $(COV_DIR)/coverage_filtered.info
+	@lcov --list $(COV_DIR)/coverage.info  # This command will list what is actually captured before filtering.
+	@lcov --ignore-errors unused --ignore-errors empty --remove $(COV_DIR)/coverage.info "tests/*" --output-file $(COV_DIR)/coverage_filtered.info
 	@genhtml $(COV_DIR)/coverage_filtered.info --output-directory $(COV_DIR)
 	@echo "Coverage report generated in $(COV_DIR)"
 
