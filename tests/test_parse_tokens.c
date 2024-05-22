@@ -20,6 +20,22 @@ void test_parse_basic_tokens() {
     free_program(actual_program);
 }
 
+void test_parse_tokens_assign_multi_variables() {
+    char *str_program = "x1 = x1 + x2;";
+    Program* program = create_program_from_config(str_program, NULL, 0);
+    ASTNode* root = program->start_node;
+
+    CU_ASSERT_EQUAL(root->type, NODE_TYPE_ASSIGN);
+    CU_ASSERT_EQUAL(root->data.assign.variable->key, 1);
+    ASTNode* assign_node = root->data.assign.value;
+    CU_ASSERT_EQUAL(assign_node->type, NODE_TYPE_BINARY_OP);
+    CU_ASSERT_EQUAL(assign_node->data.binop.left->type, NODE_TYPE_VARIABLE_ACCESS);
+    CU_ASSERT_EQUAL(assign_node->data.binop.right->type, NODE_TYPE_VARIABLE_ACCESS);
+    CU_ASSERT_EQUAL(assign_node->data.binop.left->data.variable_access.variable->key, 1);
+    CU_ASSERT_EQUAL(assign_node->data.binop.operation, ADDITION);
+    CU_ASSERT_EQUAL(assign_node->data.binop.right->data.variable_access.variable->key, 2);
+}
+
 void test_parse_multi_tokens() {
     char* str_program = "x1 = x1 + 0;x2 = x2 + 0;";
     Program* program = create_program_from_config(str_program, (int[]){}, 0);

@@ -96,10 +96,10 @@ void test_verify_next_tokens_equals() {
     int is_false = verify_next_tokens_equals(tokens->tokens, subTokenTypesFalse, 0);
     int is_true_three = verify_next_tokens_equals(tokens->tokens, subTokenTypesThree, 0);
     int is_true_sub = verify_next_tokens_equals(tokens->tokens, subTokenTypesSub, 1);
-    CU_ASSERT_EQUAL(1, is_true);
-    CU_ASSERT_EQUAL(0, is_false);
-    CU_ASSERT_EQUAL(1, is_true_three);
-    CU_ASSERT_EQUAL(1, is_true_sub);
+    CU_ASSERT_TRUE(is_true);
+    CU_ASSERT_FALSE(is_false);
+    CU_ASSERT_TRUE(is_true_three);
+    CU_ASSERT_TRUE(is_true_sub);
 
     free_token_array(tokens);
 }
