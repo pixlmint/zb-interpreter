@@ -6,17 +6,17 @@ void test_tokenize_assign() {
     TokenArray* resultArr = tokenize("=");
     Token* result = resultArr->tokens;
     CU_ASSERT(result[0].type == TOKEN_ASSIGN);
-    CU_ASSERT_PTR_NULL(result[0].value);
+    CU_ASSERT_STRING_EQUAL(result[0].value, "=");
     free_token_array(resultArr);
 }
 
 void test_tokenize_parentheses() {
-    TokenArray* resultArr = tokenize("()");
+    TokenArray* resultArr = tokenize("( )");
     Token* result = resultArr->tokens;
     CU_ASSERT(result[0].type == TOKEN_LPAREN);
-    CU_ASSERT_PTR_NULL(result[0].value);
+    CU_ASSERT_STRING_EQUAL(result[0].value, "(");
     CU_ASSERT(result[1].type == TOKEN_RPAREN);
-    CU_ASSERT_PTR_NULL(result[1].value);
+    CU_ASSERT_STRING_EQUAL(result[1].value, ")");
     free_token_array(resultArr);
 }
 
@@ -24,7 +24,7 @@ void test_tokenize_greater_than() {
     TokenArray* resultArr = tokenize(">");
     Token* result = resultArr->tokens;
     CU_ASSERT(result[0].type == TOKEN_GT);
-    CU_ASSERT_PTR_NULL(result[0].value);
+    CU_ASSERT_STRING_EQUAL(result[0].value, ">");
     free_token_array(resultArr);
 }
 
@@ -32,13 +32,13 @@ void test_tokenize_keywords() {
     TokenArray* resultArr = tokenize("Loop While Do End");
     Token* result = resultArr->tokens;
     CU_ASSERT(result[0].type == TOKEN_LOOP);
-    CU_ASSERT_PTR_NULL(result[0].value);
+    CU_ASSERT_STRING_EQUAL(result[0].value, "Loop");
     CU_ASSERT(result[1].type == TOKEN_WHILE);
-    CU_ASSERT_PTR_NULL(result[1].value);
+    CU_ASSERT_STRING_EQUAL(result[1].value, "While");
     CU_ASSERT(result[2].type == TOKEN_DO);
-    CU_ASSERT_PTR_NULL(result[2].value);
+    CU_ASSERT_STRING_EQUAL(result[2].value, "Do");
     CU_ASSERT(result[3].type == TOKEN_END);
-    CU_ASSERT_PTR_NULL(result[3].value);
+    CU_ASSERT_STRING_EQUAL(result[3].value, "End");
     free_token_array(resultArr);
 }
 
@@ -46,7 +46,7 @@ void test_tokenize_unknown() {
     TokenArray* resultArr = tokenize("@");
     Token* result = resultArr->tokens;
     CU_ASSERT(result[0].type == TOKEN_UNKNOWN);
-    CU_ASSERT_PTR_NULL(result[0].value);
+    CU_ASSERT_STRING_EQUAL(result[0].value, "@");
     free_token_array(resultArr);
 }
 

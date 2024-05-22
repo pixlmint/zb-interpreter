@@ -70,7 +70,6 @@ TokenArray* tokenize(char* input) {
             number[length] = '\0';
             Token intToken = (Token) {TOKEN_INT, number};
             add_token(tokens, intToken);
-            // tokens[token_count++] = (Token){TOKEN_INT, number};
             token_count++;
             pos += length;
         } else if (input[pos] == 'x' && isdigit(input[pos + 1])) {
@@ -85,66 +84,61 @@ TokenArray* tokenize(char* input) {
             token_count++;
             pos += length;
         } else {
-            Token newToken;
+            Token new_token;
+            int skipPositions = 0;
             // Handle single character tokens and keywords
             switch (input[pos]) {
                 case '+':
-                    newToken = (Token){TOKEN_PLUS, NULL};
-                    // tokens[token_count++] = ;
+                    new_token = (Token){TOKEN_PLUS, NULL};
                     break;
                 case '-':
-                    newToken = (Token){TOKEN_MINUS, NULL};
-                    // tokens[token_count++] = (Token){TOKEN_MINUS, NULL};
+                    new_token = (Token){TOKEN_MINUS, NULL};
                     break;
                 case '=':
-                    newToken = (Token){TOKEN_ASSIGN, NULL};
-                    // tokens[token_count++] = (Token){TOKEN_ASSIGN, NULL};
+                    new_token = (Token){TOKEN_ASSIGN, NULL};
                     break;
                 case ';':
-                    newToken = (Token){TOKEN_SEMICOLON, NULL};
-                    // tokens[token_count++] = (Token){TOKEN_SEMICOLON, NULL};
+                    new_token = (Token){TOKEN_SEMICOLON, NULL};
                     break;
                 case '(':
-                    newToken = (Token){TOKEN_LPAREN, NULL};
-                    // tokens[token_count++] = (Token){TOKEN_LPAREN, NULL};
+                    new_token = (Token){TOKEN_LPAREN, NULL};
                     break;
                 case ')':
-                    newToken = (Token){TOKEN_RPAREN, NULL};
-                    // tokens[token_count++] = (Token){TOKEN_RPAREN, NULL};
+                    new_token = (Token){TOKEN_RPAREN, NULL};
                     break;
                 case '>':
-                    newToken = (Token){TOKEN_GT, NULL};
-                    // tokens[token_count++] = (Token){TOKEN_GT, NULL};
+                    new_token = (Token){TOKEN_GT, NULL};
                     break;
                 default:
                     if (strncmp(input + pos, "Loop", 4) == 0) {
-                        newToken = (Token){TOKEN_LOOP, NULL};
-                        // tokens[token_count++] = (Token){TOKEN_LOOP, NULL};
-                        pos += 3; // Account for 'Loop' length -1
+                        new_token = (Token){TOKEN_LOOP, NULL};
+                        skipPositions = 3; // Account for 'Loop' length -1
                     } else if (strncmp(input + pos, "While", 5) == 0) {
-                        newToken = (Token){TOKEN_WHILE, NULL};
-                        // tokens[token_count++] = (Token){TOKEN_WHILE, NULL};
-                        pos += 4; // Account for 'While' length -1
+                        new_token = (Token){TOKEN_WHILE, NULL};
+                        skipPositions = 4; // Account for 'While' length -1
                     } else if (strncmp(input + pos, "Do", 2) == 0) {
-                        newToken = (Token){TOKEN_DO, NULL};
-                        // tokens[token_count++] = (Token){TOKEN_DO, NULL};
-                        pos += 1; // Account for 'Do' length -1
+                        new_token = (Token){TOKEN_DO, NULL};
+                        skipPositions = 1; // Account for 'Do' length -1
                     } else if (strncmp(input + pos, "End", 3) == 0) {
-                        newToken = (Token){TOKEN_END, NULL};
-                        // tokens[token_count++] = (Token){TOKEN_END, NULL};
-                        pos += 2; // Account for 'End' length -1
+                        new_token = (Token){TOKEN_END, NULL};
+                        skipPositions = 2; // Account for 'End' length -1
                     } else {
-                        newToken = (Token){TOKEN_UNKNOWN, NULL};
-                        // tokens[token_count++] = (Token){TOKEN_UNKNOWN, NULL};
+                        new_token = (Token){TOKEN_UNKNOWN, NULL};
                     }
             }
-            add_token(tokens, newToken);
+            int length = 0;
+            while (!isspace(input[pos + length])) length++;
+            char* token_string = malloc(length + 1);
+            strncpy(token_string, input + pos, length);
+            token_string[length] = '\0';
+            new_token.value = token_string;
+            add_token(tokens, new_token);
             token_count++;
-            pos++; // Move past the character
+            pos += skipPositions + 1; // Move past the character
         }
     }
-    Token eofToken = (Token){TOKEN_EOF, NULL}; // Mark the end of input
-    add_token(tokens, eofToken);
+    Token eof_token = (Token){TOKEN_EOF, NULL}; // Mark the end of input
+    add_token(tokens, eof_token);
     return tokens;
 }
 
