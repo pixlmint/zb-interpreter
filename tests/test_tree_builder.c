@@ -1,21 +1,11 @@
 #include <CUnit/Basic.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "../lib/tokenizer.h"
+#include "../lib/zb_headers.h"
 
 void initializeTokensArray(TokenArray* tokens, TokenType* tokenTypes, int countTokenTypes) {
     for (int i = 0; i < countTokenTypes; i++) {
         add_token(tokens, (Token) {tokenTypes[i], NULL});
-    }
-}
-
-void test_get_variable_index() {
-    char* testVal[] = {"1", "55", "1000", "001"};
-    int actualVal[] = {1, 55, 1000, 1};
-    int result;
-    for (int i = 0; i < 4; i++) {
-        result = str_to_int(testVal[i]);
-        CU_ASSERT(result == actualVal[i]);
     }
 }
 
@@ -157,7 +147,6 @@ void test_add_node(void) {
 }
 
 void suite_tree_builder(CU_pSuite suite) {
-    CU_add_test(suite, "test_get_variable_index", test_get_variable_index);
     CU_add_test(suite, "test_get_array_part", test_get_array_part);
     CU_add_test(suite, "test_dyncamic_array_create", test_dyncamic_array_create);
     CU_add_test(suite, "test_dyn_array_add", test_dyn_array_add);

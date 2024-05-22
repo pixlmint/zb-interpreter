@@ -23,3 +23,9 @@ char* read_file(const char* filename) {
     return buffer;
 }
 
+int str_to_int(char* value) {
+    int intValue;
+    sscanf(value, "%d", &intValue);
+    return intValue;
+}
+

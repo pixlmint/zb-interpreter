@@ -1,6 +1,6 @@
 #include <CUnit/Basic.h>
 #include <CUnit/CUnit.h>
-#include "../lib/tokenizer.h"
+#include "../lib/zb_headers.h"
 
 void test_tokenize_assign() {
     TokenArray* resultArr = tokenize("=");

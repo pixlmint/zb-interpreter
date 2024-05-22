@@ -1,8 +1,7 @@
-#include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "tokenizer.h"
+#include "zb_headers.h"
 
 TokenType OPENING_TAGS[] = {TOKEN_WHILE, TOKEN_LOOP};
 TokenType ASSIGNMENT_TOKENS[] = {TOKEN_ASSIGN, TOKEN_VAR, TOKEN_ANY, TOKEN_INT, TOKEN_SEMICOLON};
@@ -39,125 +38,6 @@ Program* create_program_from_config(char* str_program, int* input, int input_siz
     return program;
 }
 
-void free_program(Program* program) {
-    free_variables(program->variables);
-    free_ast_node(program->start_node);
-    free(program);
-}
-
-void free_variables(UserVarArray* user_vars) {
-    if (user_vars == NULL) {
-        return;
-    }
-    free(user_vars->variables);
-    free(user_vars);
-}
-
-TokenArray* tokenize(char* input) {
-    TokenArray* tokens = create_token_array(10);
-    int pos = 0;
-    int token_count = 0;
-
-    while (input[pos] != '\0') {
-        if (isspace(input[pos])) {
-            pos++; // Skip whitespace
-        } else if (isdigit(input[pos])) {
-            // Handle numbers
-            int length = 0;
-            while (isdigit(input[pos + length])) length++;
-            char* number = malloc(length + 1);
-            strncpy(number, input + pos, length);
-            number[length] = '\0';
-            Token intToken = (Token) {TOKEN_INT, number};
-            add_token(tokens, intToken);
-            token_count++;
-            pos += length;
-        } else if (input[pos] == 'x' && isdigit(input[pos + 1])) {
-            // Handle variables
-            int length = 1;
-            while (isdigit(input[pos + length])) length++;
-            char* var_name = malloc(length);
-            strncpy(var_name, input + pos + 1, length - 1);
-            var_name[length - 1] = '\0';
-            Token var_token = (Token) {TOKEN_VAR, var_name};
-            add_token(tokens, (Token) var_token );
-            token_count++;
-            pos += length;
-        } else {
-            Token new_token;
-            int skipPositions = 0;
-            // Handle single character tokens and keywords
-            switch (input[pos]) {
-                case '+':
-                    new_token = (Token){TOKEN_PLUS, NULL};
-                    break;
-                case '-':
-                    new_token = (Token){TOKEN_MINUS, NULL};
-                    break;
-                case '=':
-                    new_token = (Token){TOKEN_ASSIGN, NULL};
-                    break;
-                case ';':
-                    new_token = (Token){TOKEN_SEMICOLON, NULL};
-                    break;
-                case '(':
-                    new_token = (Token){TOKEN_LPAREN, NULL};
-                    break;
-                case ')':
-                    new_token = (Token){TOKEN_RPAREN, NULL};
-                    break;
-                case '>':
-                    new_token = (Token){TOKEN_GT, NULL};
-                    break;
-                default:
-                    if (strncmp(input + pos, "Loop", 4) == 0) {
-                        new_token = (Token){TOKEN_LOOP, NULL};
-                        skipPositions = 3; // Account for 'Loop' length -1
-                    } else if (strncmp(input + pos, "While", 5) == 0) {
-                        new_token = (Token){TOKEN_WHILE, NULL};
-                        skipPositions = 4; // Account for 'While' length -1
-                    } else if (strncmp(input + pos, "Do", 2) == 0) {
-                        new_token = (Token){TOKEN_DO, NULL};
-                        skipPositions = 1; // Account for 'Do' length -1
-                    } else if (strncmp(input + pos, "End", 3) == 0) {
-                        new_token = (Token){TOKEN_END, NULL};
-                        skipPositions = 2; // Account for 'End' length -1
-                    } else {
-                        new_token = (Token){TOKEN_UNKNOWN, NULL};
-                    }
-            }
-            int length = 0;
-            while (!isspace(input[pos + length])) length++;
-            char* token_string = malloc(length + 1);
-            strncpy(token_string, input + pos, length);
-            token_string[length] = '\0';
-            new_token.value = token_string;
-            add_token(tokens, new_token);
-            token_count++;
-            pos += skipPositions + 1; // Move past the character
-        }
-    }
-    Token eof_token = (Token){TOKEN_EOF, NULL}; // Mark the end of input
-    add_token(tokens, eof_token);
-    return tokens;
-}
-
-TokenArray* create_token_array(int initial_capacity) {
-    TokenArray* array = malloc(sizeof(TokenArray));
-    array->tokens = malloc(initial_capacity * sizeof(Token));
-    array->size = 0;
-    array->capacity = initial_capacity;
-    return array;
-}
-
-void add_token(TokenArray* array, Token token) {
-    if (array->size == array->capacity) {
-        array->capacity *= 2;
-        array->tokens = realloc(array->tokens, array->capacity * sizeof(Token));
-    }
-    array->tokens[array->size++] = token;
-}
-
 LinkedASTNodeList* create_node_array() {
     LinkedASTNodeList* array = malloc(sizeof(LinkedASTNodeList));
     array->head = NULL;
@@ -175,53 +55,6 @@ void add_node(LinkedASTNodeList* array, ASTNode* new_node) {
         array->tail->next = new_node;
         array->tail = new_node;
     }
-}
-
-void free_ast_node(ASTNode* node) {
-    if (node == NULL) {
-        return;
-    }
-    switch (node->type) {
-        case NODE_TYPE_BINARY_OP:
-            free_ast_node(node->data.binop.left);
-            free_ast_node(node->data.binop.right);
-            break;
-        case NODE_TYPE_ASSIGN:
-            free_ast_node(node->data.assign.value);
-            break;
-        case NODE_TYPE_LOOP:
-            free_ast_node(node->data.for_loop.count_var);
-            free_ast_node(node->data.for_loop.body);
-            break;
-        case NODE_TYPE_WHILE:
-            free_ast_node(node->data.while_loop.condition);
-            free_ast_node(node->data.while_loop.body);
-            break;
-        default:
-            break;
-    }
-
-    if (node->next != NULL && node->next != node) {
-        free_ast_node(node->next);
-    }
-
-    free(node);
-}
-
-void free_token_array(TokenArray* array) {
-    if (array == NULL) {
-        return;
-    }
-
-    for (int i = 0; i < array->size; i++) {
-        if (array->tokens[i].value != NULL) {
-            free(array->tokens[i].value);
-        }
-    }
-    if (array->tokens != NULL) {
-        free(array->tokens);
-    }
-    free(array);
 }
 
 ASTNode* create_node(NodeType type) {
@@ -405,28 +238,6 @@ int find_associated_end_tag(TokenArray* tokens, int start_position) {
     return -1;
 }
 
-TokenArray* get_array_part(TokenArray* tokens, int start, int max_values) {
-    int tokens_size =  tokens->size;
-    if (tokens_size < start) {
-        fprintf(stderr, "Invalid array start value: %d for array of size %d", start, tokens_size);
-        return tokens;
-    }
-    TokenArray* sub_tokens = create_token_array(max_values);
-    if (max_values == 1) {
-        add_token(sub_tokens, tokens->tokens[start]);
-        return sub_tokens;
-    }
-    for (int i = 0; i < max_values; i++) {
-        if (start + i > tokens_size) {
-            break;
-        } else {
-            add_token(sub_tokens, tokens->tokens[i + start]);
-        }
-    }
-
-    return sub_tokens;
-}
-
 int verify_next_tokens_equals(Token* tokens, TokenType* next_tokens, int current_position) {
     int tokens_to_check_size = sizeof(&next_tokens) / sizeof(TokenType);
     for (int i = 0; i < tokens_to_check_size; i++) {
@@ -435,36 +246,5 @@ int verify_next_tokens_equals(Token* tokens, TokenType* next_tokens, int current
         }
     }
     return 1;
-}
-
-int get_variable_index(int variable_key, UserVarArray* vars) {
-    for (int i = 0; i < vars->size; i++) {
-        if (vars->variables[i].key == variable_key) {
-            return i;
-        }
-    }
-
-    return -1;
-}
-
-UserVar* get_variable(int variable_key, Program* program) {
-    UserVarArray* vars = program->variables;
-    int variable_index = get_variable_index(variable_key, vars);
-    if (variable_index == -1) {
-        if (vars->size == vars->capacity) {
-            vars->capacity *= 2;
-            program->variables = realloc(program->variables->variables, program->variables->capacity * sizeof(UserVar));
-            vars = program->variables;
-        }
-        vars->variables[vars->size++] = (UserVar) {variable_key, 0};
-        variable_index = vars->size - 1;
-    }
-    return &vars->variables[variable_index];
-}
-
-int str_to_int(char* value) {
-    int intValue;
-    sscanf(value, "%d", &intValue);
-    return intValue;
 }
 

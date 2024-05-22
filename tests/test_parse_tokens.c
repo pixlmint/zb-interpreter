@@ -1,5 +1,5 @@
 #include <CUnit/Basic.h>
-#include "../lib/tokenizer.h"
+#include "../lib/zb_headers.h"
 
 void test_parse_basic_tokens() {
     char* str_program = "x1 = x1 + 0;";
