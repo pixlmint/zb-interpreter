@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "lib/tokenizer.h"
+#include "lib/zb_headers.h"
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
@@ -20,8 +20,9 @@ int main(int argc, char* argv[]) {
     }
 
     Program* program = create_program_from_config(code, inputs, argc - 2);
+    int recursion_depth = 0;
 
-    execute_ast(program->start_node);
+    execute_ast(program->start_node, &recursion_depth);
 
     printf("x0 = %d\n", program->x0->value);
 
