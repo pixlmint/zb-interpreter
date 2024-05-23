@@ -72,26 +72,48 @@ void test_dyn_array_add() {
     free_token_array(tokens);
 }
 
-void test_verify_next_tokens_equals() {
-    TokenArray* tokens = create_token_array(4);
-    TokenType tokenTypes[] = {TOKEN_DO, TOKEN_INT, TOKEN_ANY, TOKEN_SEMICOLON};
-    initializeTokensArray(tokens, tokenTypes, 4);
+void test_verify_next_tokens_equals_assignment_tokens(void) {
+    Token tokens[] = {
+        {TOKEN_VAR, "x"},
+        {TOKEN_ASSIGN, "="},
+        {TOKEN_INT, "1"},
+        {TOKEN_PLUS, "+"},
+        {TOKEN_INT, "2"},
+        {TOKEN_SEMICOLON, ";"},
+    };
+    TokenVerification next_tokens[] = {VERIFY_VAR, VERIFY_ASSIGN, VERIFY_NUMBER, VERIFY_OPERATION, VERIFY_NUMBER, VERIFY_SEMICOLON};
+    CU_ASSERT(verify_next_tokens_equals(tokens, next_tokens, 0) == 1);
+}
 
-    TokenType subTokenTypes[] = {TOKEN_DO, TOKEN_INT};
-    TokenType subTokenTypesFalse[] = {TOKEN_INT, TOKEN_PLUS};
-    TokenType subTokenTypesThree[] = {TOKEN_DO, TOKEN_INT, TOKEN_ANY};
-    TokenType subTokenTypesSub[] = {TOKEN_INT, TOKEN_ANY, TOKEN_SEMICOLON};
+void test_verify_next_tokens_equals_operation_tokens(void) {
+    Token tokens[] = {
+        {TOKEN_INT, "1"},
+        {TOKEN_PLUS, "+"},
+        {TOKEN_INT, "2"},
+        {TOKEN_SEMICOLON, ";"},
+    };
+    TokenVerification next_tokens[] = {VERIFY_NUMBER, VERIFY_OPERATION, VERIFY_NUMBER, VERIFY_SEMICOLON};
+    CU_ASSERT(verify_next_tokens_equals(tokens, next_tokens, 0) == 1);
+}
 
-    int is_true = verify_next_tokens_equals(tokens->tokens, subTokenTypes, 0);
-    int is_false = verify_next_tokens_equals(tokens->tokens, subTokenTypesFalse, 0);
-    int is_true_three = verify_next_tokens_equals(tokens->tokens, subTokenTypesThree, 0);
-    int is_true_sub = verify_next_tokens_equals(tokens->tokens, subTokenTypesSub, 1);
-    CU_ASSERT_TRUE(is_true);
-    CU_ASSERT_FALSE(is_false);
-    CU_ASSERT_TRUE(is_true_three);
-    CU_ASSERT_TRUE(is_true_sub);
+void test_verify_next_tokens_equals_while_tokens(void) {
+    Token tokens[] = {
+        {TOKEN_VAR, "x"},
+        {TOKEN_GT, ">"},
+        {TOKEN_INT, "0"},
+        {TOKEN_DO, "do"},
+    };
+    TokenVerification next_tokens[] = {VERIFY_VAR, VERIFY_GT, VERIFY_INT, VERIFY_DO};
+    CU_ASSERT(verify_next_tokens_equals(tokens, next_tokens, 0) == 1);
+}
 
-    free_token_array(tokens);
+void test_verify_next_tokens_equals_loop_tokens(void) {
+    Token tokens[] = {
+        {TOKEN_INT, "10"},
+        {TOKEN_DO, "do"},
+    };
+    TokenVerification next_tokens[] = {VERIFY_NUMBER, VERIFY_DO};
+    CU_ASSERT(verify_next_tokens_equals(tokens, next_tokens, 0) == 1);
 }
 
 void test_find_associated_end_tag_easy() {
@@ -151,12 +173,15 @@ void suite_tree_builder(CU_pSuite suite) {
     CU_add_test(suite, "test_dyncamic_array_create", test_dyncamic_array_create);
     CU_add_test(suite, "test_dyn_array_add", test_dyn_array_add);
     CU_add_test(suite, "test_get_array_part_negative", test_get_array_part_negative);
-    CU_add_test(suite, "test_verify_next_tokens_equals", test_verify_next_tokens_equals);
     CU_add_test(suite, "test_find_associated_end_tag_easy", test_find_associated_end_tag_easy);
     CU_add_test(suite, "test_find_associated_end_tag_realistic", test_find_associated_end_tag_realistic);
     CU_add_test(suite, "test_find_associated_end_tag_nested", test_find_associated_end_tag_nested);
     CU_add_test(suite, "test_create_node_array", test_create_node_array);
     CU_add_test(suite, "test_create_node_array", test_create_node_array);
     CU_add_test(suite, "test_add_node", test_add_node);
+    CU_add_test(suite, "test_verify_next_tokens_equals_assignment_tokens", test_verify_next_tokens_equals_assignment_tokens);
+    CU_add_test(suite, "test_verify_next_tokens_equals_operation_tokens", test_verify_next_tokens_equals_operation_tokens);
+    CU_add_test(suite, "test_verify_next_tokens_equals_while_tokens", test_verify_next_tokens_equals_while_tokens);
+    CU_add_test(suite, "test_verify_next_tokens_equals_loop_tokens", test_verify_next_tokens_equals_loop_tokens);
 }
 

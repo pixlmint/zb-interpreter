@@ -76,6 +76,9 @@ coverage:
 	@genhtml $(TEST_COV_DIR)/coverage_filtered.info --output-directory $(TEST_COV_DIR)
 	@echo "Coverage report generated in $(TEST_COV_DIR)"
 
+install: all
+	@sudo cp build/prod/bin/zb /usr/local/bin/zb
+
 # Cleaning up
 clean:
 	rm -rf $(BUILD_DIR)

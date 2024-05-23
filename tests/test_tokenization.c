@@ -124,6 +124,32 @@ void test_tokenize_loop_realistic() {
     free_token_array(resultArr);
 }
 
+void test_tokenize_assign_multi_var() {
+    TokenArray* resultArr = tokenize("x1 = x1 - x2;");
+    Token* result = resultArr->tokens;
+
+    CU_ASSERT_EQUAL(result[0].type, TOKEN_VAR);
+    CU_ASSERT_EQUAL(result[1].type, TOKEN_ASSIGN);
+    CU_ASSERT_EQUAL(result[2].type, TOKEN_VAR);
+    CU_ASSERT_EQUAL(result[3].type, TOKEN_MINUS);
+    CU_ASSERT_EQUAL(result[4].type, TOKEN_VAR);
+
+    free_token_array(resultArr);
+}
+
+void test_tokenize_binop_const_then_var() {
+    TokenArray* resultArr = tokenize("x1 = 2 - x1;");
+    Token* result = resultArr->tokens;
+
+    CU_ASSERT_EQUAL(result[0].type, TOKEN_VAR);
+    CU_ASSERT_EQUAL(result[1].type, TOKEN_ASSIGN);
+    CU_ASSERT_EQUAL(result[2].type, TOKEN_INT);
+    CU_ASSERT_EQUAL(result[3].type, TOKEN_MINUS);
+    CU_ASSERT_EQUAL(result[4].type, TOKEN_VAR);
+
+    free_token_array(resultArr);
+}
+
 void suite_parser(CU_pSuite suite) {
     CU_add_test(suite, "test_tokenize_numbers", test_tokenize_numbers);
     CU_add_test(suite, "test_tokenize_variables", test_tokenize_variables);
@@ -135,5 +161,7 @@ void suite_parser(CU_pSuite suite) {
     CU_add_test(suite, "test_tokenize_unknown", test_tokenize_unknown);
     CU_add_test(suite, "test_tokenize_multiline", test_tokenize_multiline);
     CU_add_test(suite, "test_tokenize_loop_realistic", test_tokenize_loop_realistic);
+    CU_add_test(suite, "test_tokenize_assign_multi_var", test_tokenize_assign_multi_var);
+    CU_add_test(suite, "test_tokenize_binop_const_then_var", test_tokenize_binop_const_then_var);
 }
 

@@ -9,13 +9,13 @@ While x2 > 0 Do
       Loop x3 Do
           x0 = x1 + 0;
       End
-  End;
+  End
   x1 = x2 - 1;
   x1 = x0 - x1;
   Loop x1 Do
       x0 = 0 + 0;
-  End;
+  End
   x2 = x0 + 0;
   x1 = x4 + 0;
-End;
+End
 x0 = x1 + 0;

@@ -7,7 +7,7 @@ void run_calculation_test(char* file_path, int* input, int input_size, int expec
     char* code = read_file(file_path);
     Program* program = create_program_from_config(code, input, input_size);
 
-    execute_ast(program->start_node);
+    execute_ast(program->start_node, program->recursion_depth);
 
     int actual_value = program->x0->value;
     CU_ASSERT_EQUAL(expected_output, actual_value);
@@ -30,7 +30,15 @@ void test_calculations() {
     run_calculation_test("examples/min.zb", (int[]) {8, 3}, 2, 3);
     run_calculation_test("examples/addition.zb", (int[]) {8, 3}, 2, 11);
     run_calculation_test("examples/addition.zb", (int[]) {88, 33}, 2, 121);
-    // run_calculation_test("examples/gcd.zb", (int[]) {8, 4}, 2, 4);   // at the moment this breaks everything
+    run_calculation_test("examples/gcd.zb", (int[]) {8, 4}, 2, 4);
+    run_calculation_test("examples/mod.zb", (int[]) {8, 3}, 2, 2);
+    run_calculation_test("examples/mod.zb", (int[]) {8, 2}, 2, 0);
+    run_calculation_test("examples/fibonacci.zb", (int[]) {1}, 1, 1);
+    run_calculation_test("examples/fibonacci.zb", (int[]) {2}, 1, 2);
+    run_calculation_test("examples/fibonacci.zb", (int[]) {3}, 1, 3);
+    run_calculation_test("examples/fibonacci.zb", (int[]) {4}, 1, 5);
+    run_calculation_test("examples/fibonacci.zb", (int[]) {5}, 1, 8);
+    run_calculation_test("examples/fibonacci.zb", (int[]) {6}, 1, 13);
 }
 
 void suite_examples(CU_pSuite suite) {

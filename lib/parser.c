@@ -4,10 +4,10 @@
 #include "zb_headers.h"
 
 TokenType OPENING_TAGS[] = {TOKEN_WHILE, TOKEN_LOOP};
-TokenType ASSIGNMENT_TOKENS[] = {TOKEN_ASSIGN, TOKEN_VAR, TOKEN_ANY, TOKEN_INT, TOKEN_SEMICOLON};
-TokenType OPERATION_TOKENS[] = {TOKEN_VAR, TOKEN_ANY, TOKEN_INT, TOKEN_SEMICOLON};
-TokenType WHILE_TOKENS[] = {TOKEN_VAR, TOKEN_GT, TOKEN_INT, TOKEN_DO};
-TokenType LOOP_TOKENS[] = {TOKEN_VAR, TOKEN_DO};
+TokenVerification ASSIGNMENT_TOKENS[] = {VERIFY_ASSIGN, VERIFY_NUMBER, VERIFY_OPERATION, VERIFY_NUMBER, VERIFY_SEMICOLON};
+TokenVerification OPERATION_TOKENS[] = {VERIFY_NUMBER, VERIFY_OPERATION, VERIFY_NUMBER, VERIFY_SEMICOLON};
+TokenVerification WHILE_TOKENS[] = {VERIFY_VAR, VERIFY_GT, VERIFY_INT, VERIFY_DO};
+TokenVerification LOOP_TOKENS[] = {VERIFY_NUMBER, VERIFY_DO};
 
 Program* init_program() {
     Program* program = malloc(sizeof(Program));
@@ -18,6 +18,9 @@ Program* init_program() {
     user_vars->variables = malloc(sizeof(UserVar) * 10);
     program->variables = user_vars;
     program->x0 = get_variable(0, program);
+    int* recursion_depth = malloc(sizeof(int));
+    *recursion_depth = 0;
+    program->recursion_depth = recursion_depth;
 
     return program;
 }
@@ -104,14 +107,30 @@ int handle_assign(TokenArray* tokens, Program* program, ASTNode* node, int* iter
     return 0;
 }
 
+ASTNode* create_applicable_binop_node(Token* token, Program* program) {
+    ASTNode* node;
+    switch (token->type) {
+        case TOKEN_INT:
+            node = create_node(NODE_TYPE_CONSTANT);
+            node->data.constant.value = str_to_int(token->value);
+            break;
+        case TOKEN_VAR:
+            node = create_node(NODE_TYPE_VARIABLE_ACCESS);
+            node->data.variable_access.variable = get_variable(str_to_int(token->value), program);
+            break;
+        default:
+            return NULL;
+    }
+    return node;
+}
+
 int handle_binary_operation(TokenArray* tokens, Program* program, ASTNode* node, int* iterator) {
-    Token current_token = tokens->tokens[*iterator];
-    ASTNode* variable_node = create_node(NODE_TYPE_VARIABLE_ACCESS);
-    ASTNode* constant_node = create_node(NODE_TYPE_CONSTANT);
-    variable_node->data.variable_access.variable = get_variable(str_to_int(current_token.value), program);
-    node->data.binop.left = variable_node;
-    constant_node->data.constant.value = str_to_int(tokens->tokens[*iterator + 2].value);
-    node->data.binop.right = constant_node;
+    Token left_token = tokens->tokens[*iterator];
+    Token right_token = tokens->tokens[*iterator + 2];
+    ASTNode* left_node = create_applicable_binop_node(&left_token, program);
+    ASTNode* right_node = create_applicable_binop_node(&right_token, program);
+    node->data.binop.left = left_node;
+    node->data.binop.right = right_node;
     int retval = 0;
     switch (tokens->tokens[*iterator + 1].type) {
         case TOKEN_PLUS:
@@ -167,12 +186,15 @@ int handle_while_loop(TokenArray* tokens, Program* program, ASTNode* node, int* 
     return 0;
 }
 
+
+
 ASTNode* parse_tokens(TokenArray* tokens, Program* program) {
     LinkedASTNodeList* nodes = create_node_array();
     for (int i = 0; i < tokens->size; i++) {
         ASTNode* node = NULL;
         Token current_token = tokens->tokens[i];
         switch (current_token.type) {
+            case TOKEN_INT:
             case TOKEN_VAR:
                 if (verify_next_tokens_equals(tokens->tokens, ASSIGNMENT_TOKENS, i + 1)) {
                     node = create_node(NODE_TYPE_ASSIGN);
@@ -205,7 +227,7 @@ ASTNode* parse_tokens(TokenArray* tokens, Program* program) {
             case TOKEN_SEMICOLON:
                 break;
             default:
-                printf("behavior for token %d undefined\n", current_token.type);
+                printf("behavior for token %s undefined\n", current_token.value);
         }
         if (node != NULL) {
             add_node(nodes, node);
@@ -238,11 +260,47 @@ int find_associated_end_tag(TokenArray* tokens, int start_position) {
     return -1;
 }
 
-int verify_next_tokens_equals(Token* tokens, TokenType* next_tokens, int current_position) {
-    int tokens_to_check_size = sizeof(&next_tokens) / sizeof(TokenType);
+int verify_next_tokens_equals(Token* tokens, TokenVerification* next_tokens, int current_position) {
+    int tokens_to_check_size = sizeof(&next_tokens) / sizeof(TokenVerification);
     for (int i = 0; i < tokens_to_check_size; i++) {
-        if (tokens[current_position + i].type != next_tokens[i] && next_tokens[i] != TOKEN_ANY) {
-            return 0;
+        TokenVerification verify = next_tokens[i];
+        TokenType current_token = tokens[current_position + i].type;
+        switch (verify) {
+            case VERIFY_NUMBER:
+                if (current_token != TOKEN_INT && current_token != TOKEN_VAR) {
+                    return 0;
+                }
+                break;
+            case VERIFY_INT:
+                if (current_token != TOKEN_INT) return 0;
+                break;
+            case VERIFY_VAR:
+                if (current_token != TOKEN_VAR) return 0;
+                break;
+            case VERIFY_LOOP:
+                if (current_token != TOKEN_LOOP) return 0;
+                break;
+            case VERIFY_WHILE:
+                if (current_token != TOKEN_WHILE) return 0;
+                break;
+            case VERIFY_DO:
+                if (current_token != TOKEN_DO) return 0;
+                break;
+            case VERIFY_GT:
+                if (current_token != TOKEN_GT) return 0;
+                break;
+            case VERIFY_ASSIGN:
+                if (current_token != TOKEN_ASSIGN) return 0;
+                break;
+            case VERIFY_OPERATION:
+                if (current_token != TOKEN_PLUS && current_token != TOKEN_MINUS) return 0;
+                break;
+            case VERIFY_SEMICOLON:
+                if (current_token != TOKEN_SEMICOLON) return 0;
+                break;
+            case VERIFY_END:
+                if (current_token != TOKEN_END) return 0;
+                break;
         }
     }
     return 1;

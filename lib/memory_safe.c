@@ -51,6 +51,7 @@ void free_token_array(TokenArray* array) {
 void free_program(Program* program) {
     free_variables(program->variables);
     free_ast_node(program->start_node);
+    free(program->recursion_depth);
     free(program);
 }
 
@@ -61,3 +62,4 @@ void free_variables(UserVarArray* user_vars) {
     free(user_vars->variables);
     free(user_vars);
 }
+
