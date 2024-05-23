@@ -1,5 +1,5 @@
 # ZeBee (zb)
-[!logo](assets/zebee-logo.webp)
+![logo](assets/zebee-logo.webp)
 An interpreter, written in c, for the Zhaw Basic Loop/While "programming" language
 
 ## Installation
