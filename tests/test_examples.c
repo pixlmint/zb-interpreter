@@ -12,7 +12,7 @@ void run_calculation_test(char* file_path, int* input, int input_size, int expec
     int actual_value = program->x0->value;
     CU_ASSERT_EQUAL(expected_output, actual_value);
     if (expected_output != actual_value) {
-        fprintf(stderr, "expected: %d, actual: %d. source file: %s\n", expected_output, actual_value, file_path);
+        printf("expected: %d, actual: %d. source file: %s\n", expected_output, actual_value, file_path);
     }
     
     free_program(program);

@@ -14,8 +14,8 @@ Program* init_program() {
 
     UserVarArray* user_vars = malloc(sizeof(UserVarArray));
     user_vars->size = 0;
-    user_vars->capacity = 10;
-    user_vars->variables = malloc(sizeof(UserVar) * 10);
+    user_vars->capacity = DEFAULT_VARS_CAPACITY;
+    user_vars->variables = malloc(sizeof(UserVar) * DEFAULT_VARS_CAPACITY);
     program->variables = user_vars;
     program->x0 = get_variable(0, program);
     int* recursion_depth = malloc(sizeof(int));
@@ -124,14 +124,13 @@ ASTNode* create_applicable_binop_node(Token* token, Program* program) {
     return node;
 }
 
-int handle_binary_operation(TokenArray* tokens, Program* program, ASTNode* node, int* iterator) {
+ErrorCode handle_binary_operation(TokenArray* tokens, Program* program, ASTNode* node, int* iterator) {
     Token left_token = tokens->tokens[*iterator];
     Token right_token = tokens->tokens[*iterator + 2];
     ASTNode* left_node = create_applicable_binop_node(&left_token, program);
     ASTNode* right_node = create_applicable_binop_node(&right_token, program);
     node->data.binop.left = left_node;
     node->data.binop.right = right_node;
-    int retval = 0;
     switch (tokens->tokens[*iterator + 1].type) {
         case TOKEN_PLUS:
             node->data.binop.operation = ADDITION;
@@ -140,21 +139,21 @@ int handle_binary_operation(TokenArray* tokens, Program* program, ASTNode* node,
             node->data.binop.operation = SUBTRACTION;
             break;
         default:
-            retval = -1;
-            fprintf(stderr, "invalid operation\n");
+            return E_UNSUPPORTED_OPERATION;
+            // e_throw(E_UNSUPPORTED_OPERATION, "Invalid Operation", -1);
     }
     *iterator += 3;
-    return retval;
+    return E_NONE;
 }
 
-int handle_for_loop(TokenArray* tokens, Program* program, ASTNode* node, int* iterator) {
+ErrorCode handle_for_loop(TokenArray* tokens, Program* program, ASTNode* node, int* iterator) {
     ASTNode* count_var = create_node(NODE_TYPE_VARIABLE_ACCESS);
     count_var->data.variable_access.variable = get_variable(str_to_int(tokens->tokens[*iterator + 1].value), program);
     node->data.for_loop.count_var = count_var;
     int loop_closing_tag_index = find_associated_end_tag(tokens, *iterator + 2);
     if (loop_closing_tag_index == -1) {
-        fprintf(stderr, "Unable to find matching closing tag\n");
-        return -1;
+        // fprintf(, "Unable to find matching closing tag\n");
+        return E_LOOP_NO_CLOSING_TAG;
     } else {
         TokenArray* body_tokens = get_array_part(tokens, *iterator + 3, abs(*iterator + 3 - loop_closing_tag_index));
         node->data.for_loop.body = parse_tokens(body_tokens, program);
@@ -163,18 +162,18 @@ int handle_for_loop(TokenArray* tokens, Program* program, ASTNode* node, int* it
         *iterator = loop_closing_tag_index;
     }
 
-    return 0;
+    return E_NONE;
 }
 
-int handle_while_loop(TokenArray* tokens, Program* program, ASTNode* node, int* iterator) {
+ErrorCode handle_while_loop(TokenArray* tokens, Program* program, ASTNode* node, int* iterator) {
     ASTNode* condition_var = create_node(NODE_TYPE_VARIABLE_ACCESS);
     condition_var->data.variable_access.variable = get_variable(str_to_int(tokens->tokens[*iterator + 1].value), program);
     node->data.while_loop.condition = condition_var;
     int loop_closing_tag_index = find_associated_end_tag(tokens, *iterator + 2);
 
     if (loop_closing_tag_index == -1) {
-        fprintf(stderr, "Unable to find matching closing tag");
-        return -1;
+        // fprintf(, "Unable to find matching closing tag");
+        return E_LOOP_NO_CLOSING_TAG;
     } else {
         TokenArray* body_tokens = get_array_part(tokens, *iterator + 5,  loop_closing_tag_index - (*iterator + 5));
         node->data.while_loop.body = parse_tokens(body_tokens, program);
@@ -183,10 +182,8 @@ int handle_while_loop(TokenArray* tokens, Program* program, ASTNode* node, int* 
         *iterator = loop_closing_tag_index;
     }
 
-    return 0;
+    return E_NONE;
 }
-
-
 
 ASTNode* parse_tokens(TokenArray* tokens, Program* program) {
     LinkedASTNodeList* nodes = create_node_array();
@@ -194,14 +191,15 @@ ASTNode* parse_tokens(TokenArray* tokens, Program* program) {
         ASTNode* node = NULL;
         Token current_token = tokens->tokens[i];
         switch (current_token.type) {
+            ErrorCode error;
             case TOKEN_INT:
             case TOKEN_VAR:
                 if (verify_next_tokens_equals(tokens->tokens, ASSIGNMENT_TOKENS, i + 1)) {
                     node = create_node(NODE_TYPE_ASSIGN);
-                    handle_assign(tokens, program, node, &i);
+                    error = handle_assign(tokens, program, node, &i);
                 } else if (verify_next_tokens_equals(tokens->tokens, OPERATION_TOKENS, i)) {
                     node = create_node(NODE_TYPE_BINARY_OP);
-                    handle_binary_operation(tokens, program, node, &i);
+                    error = handle_binary_operation(tokens, program, node, &i);
                 } else {
                     fprintf(stderr, "Expected tokens and actual tokens do not match\n");
                 }
@@ -209,7 +207,7 @@ ASTNode* parse_tokens(TokenArray* tokens, Program* program) {
             case TOKEN_LOOP:
                 if (verify_next_tokens_equals(tokens->tokens, LOOP_TOKENS, i + 1)) {
                     node = create_node(NODE_TYPE_LOOP);
-                    handle_for_loop(tokens, program, node, &i);
+                    error = handle_for_loop(tokens, program, node, &i);
                 } else {
                     fprintf(stderr, "Invalid Loop definition\n");
                 }
@@ -217,7 +215,7 @@ ASTNode* parse_tokens(TokenArray* tokens, Program* program) {
             case TOKEN_WHILE:
                 if (verify_next_tokens_equals(tokens->tokens, WHILE_TOKENS, i + 1)) {
                     node = create_node(NODE_TYPE_WHILE);
-                    handle_while_loop(tokens, program, node, &i);
+                    error = handle_while_loop(tokens, program, node, &i);
                 } else {
                     fprintf(stderr, "Invalid While definition\n");
                 }

@@ -1,11 +1,14 @@
 #include "zb_headers.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 char* read_file(const char* filename) {
     FILE* file = fopen(filename, "r");
     if (file == NULL) {
-        fprintf(stderr, "Could not open file %s\n", filename);
+        char message[125];
+        sprintf(message, "Could not open file %s", filename);
+        e_throw(E_READ_FILE_ERROR, message, -1);
         return NULL;
     }
 
@@ -28,4 +31,12 @@ int str_to_int(char* value) {
     sscanf(value, "%d", &intValue);
     return intValue;
 }
+
+// Do not define e_throw when running tests
+#ifndef TEST_SUITES_H
+void e_throw(ErrorCode error, char* message, int line) {
+    printf("\n%s\n", message);
+    exit(error);
+}
+#endif
 

@@ -2,7 +2,7 @@
 CC := gcc
 CFLAGS := -Wall -I./lib -g
 COVFLAGS := -fprofile-arcs -ftest-coverage
-LDFLAGS := -L/usr/lib
+LDFLAGS := -L/usr/lib -lm
 TEST_LDLIBS := -lcunit -lgcov
 
 # Directory definitions
@@ -42,15 +42,15 @@ $(shell mkdir -p $(TEST_BIN_DIR) $(TEST_OBJ_DIR) $(TEST_COV_DIR) $(PROD_BIN_DIR)
 $(EXEC): $(PROD_OBJ_FILES) $(MAIN_OBJ)
 	$(CC) $^ -o $@ $(LDFLAGS)
 
-$(TEST_EXEC): $(TEST_OBJ_SRC_FILES) $(TEST_OBJ_TEST_FILES)
+$(TEST_EXEC): $(TEST_OBJ_SRC_FILES) $(TEST_OBJ_TEST_FILES) 
 	$(CC) $^ $(TEST_LDLIBS) -o $@ $(LDFLAGS) $(COVFLAGS)
 
 $(PROD_OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 $(TEST_OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(TEST_OBJ_DIR)
-	$(CC) $(CFLAGS) $(COVFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -DTEST_SUITES_H $(COVFLAGS) -c $< -o $@
 $(TEST_OBJ_DIR)/%.o: $(TEST_SRC_DIR)/%.c | $(OBJ_DIR)
-	$(CC) $(CFLAGS) $(COVFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -DTEST_SUITES_H $(COVFLAGS) -c $< -o $@
 
 $(MAIN_OBJ): main.c | $(PROD_OBJ_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -62,7 +62,7 @@ run_tests: $(TEST_EXEC)
 
 test_leaks: $(TEST_EXEC)
 	@echo "Checking for memory leaks..."
-	@valgrind --track-origins=yes --leak-check=full ./$<
+	@valgrind --track-origins=yes --leak-check=full --show-leak-kinds=all ./$<
 
 debug: $(TEST_EXEC)
 	gdb $<

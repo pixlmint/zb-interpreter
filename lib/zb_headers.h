@@ -25,6 +25,7 @@ typedef enum {
 typedef struct {
     TokenType type;
     char* value;
+    int src_line;
 } Token;
 
 typedef struct UserVar {
@@ -67,6 +68,7 @@ typedef struct {
     Token* tokens;
     int size;
     int capacity;
+    int contains_invalid_tokens;
 } TokenArray;
 
 // Function declarations
@@ -93,4 +95,19 @@ void free_ast_node(ASTNode* node);
 void free_token_array(TokenArray* array);
 int verify_next_tokens_equals(Token* tokens, TokenVerification* next_tokens, int current_position);
 
+#ifndef TEST_SUITE_H
 #define MAX_DEPTH 200
+#endif
+#define DEFAULT_VARS_CAPACITY 10
+
+
+// Error Codes
+
+typedef enum {
+    E_NONE, E_UNRECOGNISED_TOKEN, E_INVALID_TOKEN, E_RECURSION_ERROR, E_READ_FILE_ERROR,
+    E_PARSER_EXCEPTION, E_UNSUPPORTED_OPERATION, E_LOOP_NO_CLOSING_TAG, 
+    E_INVALID_WHILE, E_INVALID_LOOP, E_INVALID_ASSIGN,
+} ErrorCode;
+
+void e_throw(ErrorCode code, char* message, int line);
+

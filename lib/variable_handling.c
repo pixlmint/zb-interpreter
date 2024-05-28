@@ -17,8 +17,7 @@ UserVar* get_variable(int variable_key, Program* program) {
     if (variable_index == -1) {
         if (vars->size == vars->capacity) {
             vars->capacity *= 2;
-            program->variables = realloc(program->variables->variables, program->variables->capacity * sizeof(UserVar));
-            vars = program->variables;
+            vars->variables = realloc(program->variables->variables, program->variables->capacity * sizeof(UserVar));
         }
         vars->variables[vars->size++] = (UserVar) {variable_key, 0};
         variable_index = vars->size - 1;

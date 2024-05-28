@@ -4,7 +4,9 @@
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
-        fprintf(stderr, "Usage: %s <file> <var1> <var2> ...\n", argv[0]);
+        char message[100];
+        sprintf(message, "Usage: %s <file> <var1> <var2> ...\n", argv[0]);
+        e_throw(E_READ_FILE_ERROR, message, -1);
         return 1;
     }
 

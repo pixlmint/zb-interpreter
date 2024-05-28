@@ -1,11 +1,12 @@
 #include "zb_headers.h"
 #include <stdio.h>
-#include <stdlib.h>
 
 int execute_ast(ASTNode* node, int* depth) {
+    char message[100];
     if (*depth >= MAX_DEPTH) {
-        fprintf(stderr, "\nMax depth of %d reached, exiting\n", MAX_DEPTH);
-        exit(1);
+        sprintf(message, "\nMax depth of %d reached, exiting\n", MAX_DEPTH);
+        e_throw(E_RECURSION_ERROR, message, -1);
+        return -1;
     }
     int new_val;
     switch (node->type) {
@@ -56,13 +57,10 @@ int execute_ast(ASTNode* node, int* depth) {
                             execute_ast(node->data.binop.right, depth);
                     *depth -= 1;
                     return sub_retval;
-                default:
-                    fprintf(stderr, "Unsupported operation\n");
-                    return 0;
             }
         default:
-            fprintf(stderr, "undefined behaviour for node type %d\n", node->type);
-            
+            sprintf(message, "undefined behaviour for node type %d\n", node->type);
+            e_throw(E_INVALID_TOKEN, message, -1);
     }
     if (node->next) {
         *depth += 1;
